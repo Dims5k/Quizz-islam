@@ -1,0 +1,750 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="La Caravane du Savoir : jeu de plateau et quiz sur l'islam à jouer en famille sur un seul téléphone. Duo, Carré ou Cash, réponse au micro.">
+<meta name="theme-color" content="#1B1530">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Caravane">
+<style>body{margin:0}[hidden]{display:none!important}</style>
+<title>La Caravane du Savoir</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@500;700&family=Figtree:wght@400;600;800&display=swap">
+<style>
+/* Layout : un plateau de jeu illustré posé sur une table sombre ; le dé et le joueur courant en bas ; la carte-question monte depuis le bas comme une carte qu'on tire. Univers unique (nuit + sable), assumé dans les deux thèmes. */
+:root{
+  color-scheme:dark;
+  --table:#1B1530; --table2:#261D42; --card:#FFF8EA; --ink:#2A2118; --muted:#7A6A55; --cream:#F6E9CF; --gold:#F2B441; --gold2:#C98A1B;
+  --ok:#2E9E5B; --ko:#D2493A; --duo:#3D7FD6; --carre:#E7A52C; --cash:#D2493A;
+  --c-coran:#2E9E5B; --c-sira:#E8862F; --c-prophetes:#3D7FD6; --c-piliers:#D24B6A; --c-histoire:#8A5CD0; --c-culture:#E2B72E;
+  --f-display:"Reem Kufi", "Trebuchet MS", sans-serif; --f-body:"Figtree", "Segoe UI", system-ui, sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:radial-gradient(120% 80% at 50% 0,var(--table2),var(--table));color:var(--cream);font-family:var(--f-body);font-size:17px;line-height:1.45;padding-inline:12px;padding-block:0;overflow-x:hidden;min-height:100vh}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-display);margin:0;line-height:1.1;text-wrap:balance}
+.wrap{max-width:560px;margin:0 auto;position:relative;padding-bottom:150px}
+/* barre du haut */
+.top{display:flex;align-items:center;gap:8px;padding-block:10px 6px;position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:linear-gradient(var(--table) 70%,transparent)}
+.chips{display:flex;gap:6px;overflow-x:auto;flex:1;scrollbar-width:none;padding:2px}
+.chips::-webkit-scrollbar{display:none}
+.chip{display:flex;align-items:center;gap:6px;flex:none;padding:4px 10px 4px 4px;border-radius:999px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.12);font-size:14px;font-weight:700;transition:transform .3s,background .3s}
+.chip.cur{background:rgba(242,180,65,.22);border-color:var(--gold);transform:scale(1.05)}
+.chip .av{width:26px;height:26px;border-radius:50%;display:grid;place-items:center}
+.chip .av svg{width:20px;height:16px}
+.chip small{font-weight:600;opacity:.75}
+.chip .fire{color:var(--gold);font-weight:800}
+.icon-btn{width:40px;height:40px;border-radius:12px;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);display:grid;place-items:center;flex:none}
+.icon-btn svg{width:20px;height:20px}
+/* plateau */
+.boardwrap{position:relative;border-radius:22px;padding:8px;background:linear-gradient(145deg,#6B4526,#3E2614);box-shadow:0 20px 40px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.15)}
+#board{display:block;width:100%;height:auto;border-radius:16px}
+.sq-num{font:800 9px var(--f-body);fill:#fff;pointer-events:none}
+.pulse{animation:pulse 1.2s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes pulse{50%{transform:scale(1.25);opacity:.4}}
+.pawn{transition:none}
+.pawn.cur .pbody{animation:bounce 1s ease-in-out infinite;transform-box:fill-box;transform-origin:bottom center}
+@keyframes bounce{50%{transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){.pawn.cur .pbody,.pulse{animation:none}}
+/* dock */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:10;padding:12px 16px calc(14px + env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,rgba(12,9,24,.92) 30%);display:flex;justify-content:center}
+.dock-in{width:100%;max-width:560px;display:flex;align-items:center;gap:14px}
+.dock .who{flex:1;min-width:0}
+.dock .who small{display:block;font-size:13px;opacity:.75;font-weight:600}
+.dock .who b{font-family:var(--f-display);font-size:24px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.big{border:0;border-radius:18px;padding:14px 22px;font-weight:800;font-size:18px;background:linear-gradient(180deg,#FFD068,var(--gold2));color:#2A1A05;box-shadow:0 6px 0 #8A5A0C,0 10px 20px rgba(0,0,0,.35);transition:transform .08s,box-shadow .08s;min-height:56px}
+.big:active{transform:translateY(4px);box-shadow:0 2px 0 #8A5A0C}
+.big:disabled{filter:grayscale(.6);opacity:.6}
+.big.w{width:100%}
+/* dé 3D */
+.dice{width:62px;height:62px;perspective:400px;flex:none}
+.cube{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform 1s cubic-bezier(.2,.9,.3,1.15)}
+.face{position:absolute;inset:0;background:#FFFDF6;border-radius:12px;border:2px solid #E4D2AE;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:9px;gap:2px;box-shadow:inset 0 -4px 0 rgba(0,0,0,.08)}
+.face i{border-radius:50%;background:#2A2118;visibility:hidden;margin:1px}
+.face i.on{visibility:visible}
+.f1{transform:rotateY(0) translateZ(31px)}.f2{transform:rotateY(90deg) translateZ(31px)}.f3{transform:rotateX(90deg) translateZ(31px)}
+.f4{transform:rotateX(-90deg) translateZ(31px)}.f5{transform:rotateY(-90deg) translateZ(31px)}.f6{transform:rotateY(180deg) translateZ(31px)}
+/* carte question */
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;justify-content:center;pointer-events:none}
+.sheet .card{pointer-events:auto;width:100%;max-width:560px;max-height:84vh;overflow-y:auto;background:var(--card);color:var(--ink);border-radius:26px 26px 0 0;box-shadow:0 -12px 40px rgba(0,0,0,.5);transform:translateY(105%);transition:transform .45s cubic-bezier(.2,.9,.3,1);padding-bottom:env(safe-area-inset-bottom,0px)}
+.sheet.open .card{transform:none}
+.band{display:flex;align-items:center;gap:10px;padding:14px 18px;color:#fff;font-family:var(--f-display);font-size:19px;font-weight:700;position:sticky;top:0;z-index:1}
+.band .sp{flex:1}
+.band .pill{font-family:var(--f-body);font-size:13px;font-weight:800;background:rgba(0,0,0,.2);padding:3px 10px;border-radius:999px}
+.cbody{padding:16px 18px 22px;display:grid;gap:14px}
+.qfor{font-size:14px;font-weight:700;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.qtext{font-size:clamp(21px,5.4vw,26px);font-weight:700;line-height:1.3}
+.modes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.mode{border:0;border-radius:18px;padding:12px 4px 10px;color:#fff;display:grid;gap:1px;justify-items:center;box-shadow:0 5px 0 rgba(0,0,0,.25);transition:transform .08s}
+.mode:active{transform:translateY(3px)}
+.mode b{font-family:var(--f-display);font-size:25px;line-height:1}
+.mode span{font-size:12px;font-weight:700;opacity:.95}
+.mode em{font-style:normal;font-size:26px;font-weight:800;line-height:1.1}
+.mode small{font-size:11px;font-weight:800;background:rgba(0,0,0,.2);border-radius:999px;padding:1px 8px}
+.choices{display:grid;gap:10px}
+.choices.two{grid-template-columns:1fr 1fr}
+.choice{text-align:left;border:2.5px solid #E6D6B6;background:#FFFDF6;border-radius:16px;padding:14px 16px;font-size:18px;font-weight:700;color:var(--ink);transition:transform .15s}
+.choice:active{transform:scale(.98)}
+.choice.right{border-color:var(--ok);background:#E3F5EA;animation:pop .4s}
+.choice.wrong{border-color:var(--ko);background:#FBE5E2;animation:shake .4s}
+@keyframes pop{50%{transform:scale(1.05)}}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.answer{border-radius:16px;padding:12px 14px;background:#E3F5EA;border:2.5px solid var(--ok)}
+.answer b{font-size:21px}
+.lab{font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;margin:0}
+.note{font-size:15px;color:var(--muted);margin:0}
+.heard{border-radius:16px;padding:12px 14px;border:2.5px dashed #E0CDA6;display:grid;gap:4px}
+.heard q{font-size:20px;font-weight:800;quotes:"« " " »"}
+.judge{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.judge button{border:0;border-radius:16px;min-height:56px;font-size:19px;font-weight:800;color:#fff;box-shadow:0 5px 0 rgba(0,0,0,.25)}
+.judge .yes{background:var(--ok)}.judge .no{background:var(--ko)}
+.judge .sugg{outline:4px solid var(--ink);outline-offset:2px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.ghostbtn{border:2px solid #E0CDA6;background:transparent;border-radius:14px;padding:10px 14px;font-weight:800;color:var(--ink);min-height:48px;flex:1}
+.mic{border:0;border-radius:14px;padding:10px 14px;font-weight:800;background:var(--ink);color:var(--card);min-height:48px;flex:1;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.mic.rec{background:var(--ko);animation:pulseb 1s infinite}
+@keyframes pulseb{50%{box-shadow:0 0 0 8px rgba(210,73,58,.25)}}
+.tiny{font-size:13px;color:var(--muted);margin:0}
+.timer{height:8px;border-radius:4px;background:#EADBBB;overflow:hidden}
+.timer i{display:block;height:100%;background:var(--gold2);transform-origin:left}
+.say{border:1.5px solid #E0CDA6;background:transparent;border-radius:999px;padding:3px 10px;font-weight:800;font-size:13px;color:var(--ink)}
+.pickcat{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.pickcat button{border:0;border-radius:16px;padding:16px 8px;color:#fff;font-family:var(--f-display);font-size:17px;font-weight:700;box-shadow:0 5px 0 rgba(0,0,0,.25)}
+/* bannière résultat */
+.toast{position:fixed;left:50%;top:22%;z-index:30;transform:translate(-50%,-20px) scale(.8);opacity:0;pointer-events:none;transition:all .35s cubic-bezier(.2,.9,.3,1.3);text-align:center;width:min(92vw,480px)}
+.toast.show{opacity:1;transform:translate(-50%,0) scale(1)}
+.toast .t{display:inline-block;font-family:var(--f-display);font-size:clamp(30px,9vw,46px);font-weight:700;padding:10px 26px;border-radius:20px;color:#fff;box-shadow:0 12px 30px rgba(0,0,0,.4)}
+.toast .s{display:block;margin-top:8px;font-weight:800;font-size:17px;text-shadow:0 2px 6px rgba(0,0,0,.8)}
+#fx{position:fixed;inset:0;width:100%;height:100%;z-index:40;pointer-events:none}
+/* accueil */
+.setup{padding-block:6px 30px;display:grid;gap:14px}
+.hero{display:grid;gap:10px;text-align:center;justify-items:center;padding-top:10px}
+.hero h1{font-size:clamp(36px,10vw,56px);color:var(--gold);text-shadow:0 3px 0 #6B3F08}
+.hero p{margin:0;opacity:.85;max-width:44ch}
+.hero svg{width:min(80vw,320px);height:auto}
+.rules{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.rule{border-radius:16px;padding:10px 8px;color:#fff;text-align:center;display:grid;gap:2px}
+.rule b{font-family:var(--f-display);font-size:22px}
+.rule span{font-size:12.5px;font-weight:700;line-height:1.25}
+.panel{background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);border-radius:20px;padding:16px;display:grid;gap:12px}
+.lab2{font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;margin:0;color:var(--gold)}
+.prow{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:8px;align-items:center}
+.prow .av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center}
+.prow .av svg{width:26px;height:21px}
+.prow input,.prow select{border:1.5px solid rgba(255,255,255,.18);border-radius:12px;padding:10px 12px;background:rgba(0,0,0,.25);min-width:0;width:100%}
+.prow select{width:auto}
+.prow .x{width:40px;height:44px;border-radius:12px;border:1.5px solid rgba(255,255,255,.18);background:rgba(0,0,0,.25);font-size:20px}
+.seg{display:flex;border:1.5px solid rgba(255,255,255,.18);border-radius:14px;overflow:hidden;flex-wrap:wrap}
+.seg button{flex:1;border:0;background:transparent;padding:10px 8px;font-weight:800;font-size:15px}
+.seg button[aria-pressed="true"]{background:var(--gold);color:#2A1A05}
+.hint{font-size:14px;opacity:.75;margin:0}
+.addbtn{border:1.5px dashed rgba(255,255,255,.3);background:transparent;border-radius:12px;padding:10px;font-weight:800}
+/* victoire */
+.win{position:fixed;inset:0;z-index:35;display:grid;place-items:center;background:rgba(10,7,20,.72);padding:20px;opacity:0;pointer-events:none;transition:opacity .5s}
+.win.show{opacity:1;pointer-events:auto}
+.win .box{background:var(--card);color:var(--ink);border-radius:26px;padding:24px 20px;width:min(100%,440px);display:grid;gap:12px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.win h2{font-size:clamp(30px,8vw,42px)}
+.rank{display:grid;gap:6px;text-align:left}
+.rank div{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:#F4E8CF;font-weight:700}
+.rank .av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;flex:none}
+.rank .av svg{width:22px;height:18px}
+@media (max-width:400px){.rules span{font-size:11.5px}}
+</style>
+
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="camel" viewBox="0 0 40 32"><path d="M3 30.5 5.5 20c-2.2-3.6-.8-8.6 4-8.8h2.2c1.2-5.4 6.4-7.4 9.4-3.3 2.2-4.1 7.2-3.4 8.2 1.6l2.6 2.2c.8-3.6 3-6.4 5.4-5.6l1.4 2.6c-1.8.2-2.8 1.6-3 4.4l-.8 5.4.8 12h-3l-1-9.4-3.6.8-.6 8.6h-3l-.4-8.6H14.6l-.8 8.6h-3l-.4-9.6-2.2 1.4-.8 8.2Z"/></symbol>
+    <symbol id="palm" viewBox="0 0 40 60"><path d="M21 58c-1-14 0-26 3-36" stroke="#6B4526" stroke-width="3.2" fill="none" stroke-linecap="round"/><g fill="#3E8C4A"><path d="M24 22c-6-8-14-9-20-6 7 0 13 2 20 6Z"/><path d="M24 22c-2-9 3-16 11-18-5 5-8 11-11 18Z"/><path d="M24 22c6-6 12-6 16-3-6 0-11 1-16 3Z"/><path d="M24 22c-8-3-15 0-18 6 6-4 12-5 18-6Z"/><path d="M24 22c4 3 8 9 8 15-3-6-5-10-8-15Z"/></g><circle cx="23" cy="23" r="2.2" fill="#8A5A2B"/></symbol>
+    <symbol id="tent" viewBox="0 0 60 40"><path d="M2 38 30 4l28 34Z" fill="#E9D7B4" stroke="#6B4526" stroke-width="2"/><path d="M30 4 22 38h16Z" fill="#C0392B"/><path d="M12 26h36M8 31h44" stroke="#C98A1B" stroke-width="2"/></symbol>
+    <symbol id="city" viewBox="0 0 120 70"><g fill="#2C2350"><rect x="6" y="36" width="108" height="34" rx="2"/><path d="M34 38a26 26 0 0 1 52 0Z"/><rect x="92" y="6" width="9" height="60"/><path d="M90 8h13l-6.5-8Z"/><rect x="18" y="22" width="7" height="44"/><path d="M16 24h11l-5.5-7Z"/></g><path d="M60 13v-6" stroke="#F2B441" stroke-width="2"/><circle cx="60" cy="5" r="2.2" fill="#F2B441"/><g fill="#FFD068"><rect x="44" y="50" width="6" height="10" rx="3"/><rect x="57" y="50" width="6" height="10" rx="3"/><rect x="70" y="50" width="6" height="10" rx="3"/><rect x="95" y="20" width="3" height="6" rx="1.5"/><rect x="20" y="34" width="3" height="6" rx="1.5"/></g></symbol>
+    <symbol id="well" viewBox="0 0 30 30"><rect x="5" y="14" width="20" height="12" rx="3" fill="#9C8C74" stroke="#5B4A33" stroke-width="1.6"/><path d="M5 18h20M5 22h20" stroke="#5B4A33" stroke-width="1"/><path d="M7 14V6h16v8M5 6h20" stroke="#6B4526" stroke-width="2" fill="none"/></symbol>
+    <symbol id="i-oasis" viewBox="0 0 20 20"><path d="M10 18c-.5-5 0-8 1.5-11" stroke="#6B4526" stroke-width="1.8" fill="none"/><g fill="#2E9E5B"><path d="M11.5 7c-3-4-7-4-9.5-2.5 3.5 0 6.5 1 9.5 2.5Z"/><path d="M11.5 7c-.5-4 2-7 6-8-2.5 2.5-4 5-6 8Z"/><path d="M11.5 7c3-2 6-2 7.5 0-3 0-5 0-7.5 0Z"/></g><ellipse cx="10" cy="18" rx="7" ry="1.8" fill="#3D7FD6"/></symbol>
+    <symbol id="i-vent" viewBox="0 0 20 20"><path d="M2 7h11a3 3 0 1 0-3-3M2 11h14a3 3 0 1 1-3 3M2 15h7" stroke="#3D7FD6" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
+    <symbol id="i-sable" viewBox="0 0 20 20"><path d="M2 6c3-2 5 2 8 0s5 2 8 0M2 11c3-2 5 2 8 0s5 2 8 0M2 16c3-2 5 2 8 0s5 2 8 0" stroke="#B5651D" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
+    <symbol id="i-puits" viewBox="0 0 20 20"><ellipse cx="10" cy="11" rx="7" ry="3.6" fill="#2A2118"/><ellipse cx="10" cy="11" rx="7" ry="3.6" fill="none" stroke="#8A7A62" stroke-width="2"/><path d="M4 5h12M5 5v5M15 5v5" stroke="#6B4526" stroke-width="1.8"/></symbol>
+    <radialGradient id="sand" cx="50%" cy="40%" r="75%"><stop offset="0" stop-color="#F3D9A4"/><stop offset=".7" stop-color="#E4BE7C"/><stop offset="1" stop-color="#C99A55"/></radialGradient>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2C2350"/><stop offset="1" stop-color="#E9A963"/></linearGradient>
+    <filter id="sh" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="2" stdDeviation="1.4" flood-color="#5B3A12" flood-opacity=".45"/></filter>
+  </defs>
+</svg>
+
+<div class="wrap" id="root"></div>
+<canvas id="fx"></canvas>
+
+<script>
+// [catégorie, difficulté 1-3, question, bonne réponse, [3 mauvaises réponses], note (facultative)]
+const QDATA = [
+// ---------- LE CORAN ----------
+["coran",1,"Combien de sourates compte le Coran ?","114",["110","99","120"]],
+["coran",1,"Quelle est la première sourate du Coran, dans l'ordre du mushaf ?","Al-Fâtiha",["Al-Baqara","Al-Ikhlâs","An-Nâs"]],
+["coran",1,"Quelle est la plus longue sourate du Coran ?","Al-Baqara",["Âl ʿImrân","An-Nisâ'","Yâ-Sîn"],"Elle compte 286 versets."],
+["coran",1,"Dans quelle langue le Coran a-t-il été révélé ?","L'arabe",["L'araméen","L'hébreu","Le persan"]],
+["coran",1,"Quel ange a transmis la révélation au Prophète ﷺ ?","Jibrîl (Gabriel)",["Mîkâ'îl","Isrâfîl","Mâlik"]],
+["coran",1,"Dans quelle grotte a eu lieu la première révélation ?","La grotte de Hirâ'",["La grotte de Thawr","La grotte de Qubâ'","La grotte d'Uhud"],"La grotte de Thawr est celle où le Prophète ﷺ s'est caché avec Abû Bakr pendant l'Hégire."],
+["coran",1,"Quel est le premier mot révélé du Coran ?","« Iqra' » (Lis !)",["« Bismillâh »","« Alhamdulillâh »","« Qul » (Dis !)"],"Début de la sourate Al-ʿAlaq (96)."],
+["coran",1,"Quelle est la dernière sourate du Coran, dans l'ordre du mushaf ?","An-Nâs",["Al-Falaq","Al-Ikhlâs","Al-Kawthar"]],
+["coran",1,"Pendant quel mois la révélation du Coran a-t-elle commencé ?","Ramadan",["Muharram","Rajab","Dhû l-Hijja"]],
+["coran",1,"Quelle est la plus courte sourate du Coran ?","Al-Kawthar",["Al-Ikhlâs","An-Nasr","Al-ʿAsr"],"Elle compte 3 versets."],
+["coran",1,"Quelle sourate porte le nom d'une femme ?","Maryam",["Âsiya","Khadîja","Fâtima"]],
+["coran",1,"Comment appelle-t-on une personne qui a mémorisé tout le Coran ?","Un hâfiz",["Un muezzin","Un mufti","Un calife"]],
+["coran",1,"Quelle sourate est la seule à ne pas commencer par « Bismillâh » ?","At-Tawba",["Al-Anfâl","Yûnus","Al-Fâtiha"]],
+["coran",2,"Pendant combien d'années environ le Coran a-t-il été révélé ?","Environ 23 ans",["Environ 10 ans","Environ 40 ans","Environ 5 ans"]],
+["coran",2,"Comment s'appelle la nuit où la révélation du Coran a commencé ?","Laylat al-Qadr (la Nuit du Destin)",["Laylat al-Isrâ'","La nuit de ʿÂchûrâ'","La nuit de l'Aïd"]],
+["coran",2,"Selon un hadith, quelle sourate équivaut au tiers du Coran ?","Al-Ikhlâs",["Al-Fâtiha","Yâ-Sîn","Al-Mulk"]],
+["coran",2,"Quel verset est considéré comme le plus grand verset du Coran ?","Âyat al-Kursî (le verset du Trône)",["Le dernier verset d'Al-Baqara","Le premier verset d'Al-Fâtiha","Le verset de la lumière"],"Verset 255 de la sourate Al-Baqara."],
+["coran",2,"Sous quel calife le Coran a-t-il été rassemblé pour la première fois en un seul recueil ?","Abû Bakr",["ʿUthmân","ʿUmar","ʿAlî"],"Sous ʿUthmân, des copies officielles ont ensuite été envoyées dans les provinces."],
+["coran",2,"Sous quel calife des copies officielles du Coran ont-elles été envoyées dans les grandes villes ?","ʿUthmân",["Abû Bakr","ʿUmar","Muʿâwiya"]],
+["coran",2,"Quel compagnon a été chargé de rassembler le Coran ?","Zayd ibn Thâbit",["Bilâl ibn Rabâh","Abû Hurayra","Khâlid ibn al-Walîd"]],
+["coran",2,"En combien de parties (juz') le Coran est-il divisé ?","30",["60","114","7"]],
+["coran",2,"Que signifie « An-Nahl », le nom de la sourate 16 ?","Les abeilles",["Les fourmis","L'araignée","Le palmier"]],
+["coran",2,"Que signifie « Al-ʿAnkabût », le nom de la sourate 29 ?","L'araignée",["Les abeilles","L'éléphant","Les fourmis"]],
+["coran",2,"Quelle sourate raconte l'histoire des jeunes gens de la caverne ?","Al-Kahf",["Yûsuf","Maryam","Tâ-Hâ"]],
+["coran",2,"Quelle sourate raconte en entier l'histoire d'un prophète, appelée « le plus beau des récits » ?","Yûsuf",["Ibrâhîm","Nûh","Hûd"]],
+["coran",2,"Comment appelle-t-on les sourates révélées avant l'Hégire ?","Les sourates mecquoises",["Les sourates médinoises","Les sourates longues","Les sourates abrogées"]],
+["coran",2,"Dans quelle sourate revient le refrain « Lequel donc des bienfaits de votre Seigneur nierez-vous ? »","Ar-Rahmân",["Al-Wâqiʿa","Al-Mulk","Yâ-Sîn"]],
+["coran",3,"Quelle sourate contient le plus long verset du Coran ?","Al-Baqara",["An-Nisâ'","Âl ʿImrân","Al-Mâ'ida"],"Le verset 282, sur l'écriture des dettes."],
+["coran",3,"Quel prophète est le plus souvent cité par son nom dans le Coran ?","Mûsâ (Moïse)",["Ibrâhîm","ʿÎsâ","Nûh"]],
+["coran",3,"Combien de fois le nom « Muhammad » apparaît-il dans le Coran ?","4 fois",["1 fois","10 fois","25 fois"],"Il est aussi appelé « Ahmad » une fois, dans la sourate As-Saff."],
+["coran",3,"Dans quelle sourate le Prophète ﷺ est-il appelé « Ahmad » ?","As-Saff",["Al-Ahzâb","Muhammad","Al-Fath"]],
+["coran",3,"Quel est le seul compagnon du Prophète ﷺ nommé dans le Coran ?","Zayd ibn Hâritha",["Abû Bakr","Bilâl","ʿAlî"],"Sourate Al-Ahzâb, verset 37."],
+["coran",3,"Quelle sourate contient deux fois la formule « Bismillâh ar-Rahmân ar-Rahîm » ?","An-Naml",["Al-Fâtiha","At-Tawba","Al-Baqara"],"Au début et au verset 30, dans la lettre de Sulaymân."],
+["coran",3,"Combien de sourates commencent par des lettres isolées (comme « Alif Lâm Mîm ») ?","29",["14","7","50"]],
+// ---------- LA VIE DU PROPHÈTE ----------
+["sira",1,"Dans quelle ville est né le Prophète Muhammad ﷺ ?","La Mecque",["Médine","Taïf","Jérusalem"]],
+["sira",1,"Comment s'appelait la mère du Prophète ﷺ ?","Âmina bint Wahb",["Halîma","Khadîja","Fâtima"]],
+["sira",1,"Comment s'appelait le père du Prophète ﷺ ?","ʿAbdullâh",["Abû Tâlib","ʿAbd al-Muttalib","Hamza"]],
+["sira",1,"Qui fut la première épouse du Prophète ﷺ ?","Khadîja",["ʿÂ'icha","Hafsa","Sawda"]],
+["sira",1,"À quel âge le Prophète ﷺ a-t-il reçu la première révélation ?","40 ans",["25 ans","30 ans","63 ans"]],
+["sira",1,"Vers quelle ville le Prophète ﷺ a-t-il émigré lors de l'Hégire ?","Médine (Yathrib)",["Jérusalem","Taïf","Damas"]],
+["sira",1,"Quel oncle a élevé et protégé le Prophète ﷺ ?","Abû Tâlib",["Abû Lahab","Hamza","al-ʿAbbâs"]],
+["sira",1,"À quel âge le Prophète ﷺ est-il décédé ?","63 ans",["60 ans","70 ans","53 ans"]],
+["sira",1,"Quel compagnon accompagnait le Prophète ﷺ pendant l'Hégire ?","Abû Bakr",["ʿUmar","ʿAlî","Bilâl"],"ʿAlî était resté à La Mecque, dans le lit du Prophète ﷺ, pour tromper ses ennemis."],
+["sira",1,"Quel surnom portait le Prophète ﷺ avant la prophétie, qui signifie « le digne de confiance » ?","Al-Amîn",["Al-Fârûq","As-Siddîq","Dhû n-Nûrayn"]],
+["sira",1,"Quelle nourrice a allaité le Prophète ﷺ dans le désert ?","Halîma as-Saʿdiyya",["Âmina","Umm Ayman","Khadîja"]],
+["sira",1,"Quelle fille du Prophète ﷺ a épousé ʿAlî ?","Fâtima",["Zaynab","Ruqayya","Umm Kulthûm"]],
+["sira",1,"À quelle tribu appartenait le Prophète ﷺ ?","Quraych",["Thaqîf","Aws","Khazraj"]],
+["sira",2,"Comment appelle-t-on l'année de naissance du Prophète ﷺ ?","L'année de l'Éléphant",["L'année de la tristesse","L'année de l'Hégire","L'année des délégations"]],
+["sira",2,"Quelle fut la première grande bataille des musulmans ?","Badr",["Uhud","Al-Khandaq","Hunayn"]],
+["sira",2,"Lors de quelle bataille les musulmans ont-ils creusé une tranchée autour de Médine ?","Al-Khandaq (la bataille du Fossé)",["Badr","Uhud","Khaybar"]],
+["sira",2,"Quel compagnon a proposé de creuser la tranchée autour de Médine ?","Salmân al-Fârisî",["Abû Bakr","Khâlid ibn al-Walîd","Saʿd ibn Abî Waqqâs"]],
+["sira",2,"Comment s'appelle le voyage nocturne du Prophète ﷺ de La Mecque à Jérusalem ?","Al-Isrâ'",["Al-Hijra","Al-Fath","At-Tawâf"],"Il est suivi de l'ascension vers les cieux, al-Miʿrâj."],
+["sira",2,"Quel traité a été conclu avec les Quraych en l'an 6 de l'Hégire ?","Le traité de Hudaybiyya",["Le traité de Médine","Le pacte de ʿAqaba","Le traité de Taïf"]],
+["sira",2,"En quelle année de l'Hégire La Mecque a-t-elle été conquise ?","L'an 8",["L'an 2","L'an 5","L'an 10"]],
+["sira",2,"Quel oncle du Prophète ﷺ est surnommé « le lion d'Allah » ?","Hamza",["al-ʿAbbâs","Abû Tâlib","Abû Lahab"]],
+["sira",2,"Où est enterré le Prophète ﷺ ?","À Médine, dans sa mosquée",["À La Mecque","À Jérusalem","À Taïf"]],
+["sira",2,"Dans quel pays des musulmans ont-ils trouvé refuge avant l'Hégire ?","L'Abyssinie (Éthiopie)",["L'Égypte","Le Yémen","La Perse"],"Ils y furent protégés par le roi chrétien, an-Najâchî."],
+["sira",2,"Quelle fut la première mosquée construite par le Prophète ﷺ ?","La mosquée de Qubâ'",["La mosquée d'Al-Aqsâ","La mosquée du Prophète","La mosquée de ʿArafa"]],
+["sira",2,"Comment s'appelle l'année où le Prophète ﷺ a perdu Khadîja et Abû Tâlib ?","L'année de la tristesse",["L'année de l'Éléphant","L'année de la victoire","L'année des délégations"]],
+["sira",2,"Dans quelle ville le Prophète ﷺ a-t-il été rejeté et chassé à coups de pierres ?","Taïf",["Médine","Khaybar","Tabûk"]],
+["sira",2,"Comment s'appelle le dernier pèlerinage du Prophète ﷺ, où il prononça un célèbre sermon ?","Le pèlerinage de l'adieu",["Le petit pèlerinage","Le pèlerinage de la victoire","Le pèlerinage de Hudaybiyya"]],
+["sira",3,"À quel âge le Prophète ﷺ a-t-il perdu sa mère ?","6 ans",["2 ans","12 ans","25 ans"]],
+["sira",3,"Quel grand-père a pris en charge le Prophète ﷺ après la mort de sa mère ?","ʿAbd al-Muttalib",["Hâchim","Abû Tâlib","Wahb"]],
+["sira",3,"Environ combien de musulmans ont combattu à Badr ?","Environ 313",["Environ 1 000","Environ 40","Environ 3 000"]],
+["sira",3,"Comment s'appelait le fils du Prophète ﷺ et de Mâriya, décédé en bas âge ?","Ibrâhîm",["Al-Qâsim","ʿAbdullâh","Zayd"]],
+["sira",3,"Quel est le nom de la chamelle du Prophète ﷺ lors de l'Hégire ?","Al-Qaswâ'",["Al-Burâq","Duldul","Sâlih"],"Al-Burâq est la monture du voyage nocturne."],
+["sira",3,"Comment s'appelle le serment d'allégeance des Médinois, prêté près de La Mecque avant l'Hégire ?","Le serment de ʿAqaba",["Le serment de Ridwân","Le pacte de Hudaybiyya","Le serment de Badr"]],
+["sira",3,"Quel compagnon a été le premier homme adulte libre à embrasser l'islam ?","Abû Bakr",["ʿUmar","ʿUthmân","Hamza"],"Khadîja fut la première personne à croire, et ʿAlî le premier enfant."],
+// ---------- LES PROPHÈTES ----------
+["prophetes",1,"Qui est le premier homme et le premier prophète ?","Âdam",["Nûh","Idrîs","Ibrâhîm"]],
+["prophetes",1,"Quel prophète a construit l'arche ?","Nûh (Noé)",["Ibrâhîm","Mûsâ","Yûnus"]],
+["prophetes",1,"Quel prophète a été avalé par un grand poisson ?","Yûnus (Jonas)",["Yûsuf","Ayyûb","Mûsâ"]],
+["prophetes",1,"Quel prophète a construit la Kaʿba avec son fils Ismâʿîl ?","Ibrâhîm",["Âdam","Nûh","Dâwûd"]],
+["prophetes",1,"À quel prophète la Torah a-t-elle été révélée ?","Mûsâ (Moïse)",["ʿÎsâ","Dâwûd","Ibrâhîm"]],
+["prophetes",1,"Quel prophète est né sans père ?","ʿÎsâ (Jésus)",["Yahyâ","Âdam","Ishâq"],"Âdam, lui, est né sans père ni mère."],
+["prophetes",1,"Quel prophète a été jeté dans un puits par ses frères ?","Yûsuf (Joseph)",["Yûnus","Ismâʿîl","Hârûn"]],
+["prophetes",1,"Quel prophète comprenait le langage des animaux et commandait aux djinns ?","Sulaymân (Salomon)",["Dâwûd","Mûsâ","Sâlih"]],
+["prophetes",1,"Combien de prophètes sont cités par leur nom dans le Coran ?","25",["12","40","100"]],
+["prophetes",1,"Quel prophète a vaincu Jâlût (Goliath) ?","Dâwûd (David)",["Sulaymân","Mûsâ","Tâlût"]],
+["prophetes",1,"Quel livre a été révélé à Dâwûd ?","Les Psaumes (Az-Zabûr)",["La Torah","L'Évangile","Les Feuillets"]],
+["prophetes",1,"Quel livre a été révélé à ʿÎsâ ?","L'Évangile (Al-Injîl)",["La Torah","Les Psaumes","Le Coran"]],
+["prophetes",1,"Comment s'appelle la mère de ʿÎsâ ?","Maryam",["Âsiya","Hâjar","Sâra"]],
+["prophetes",2,"Quel prophète est surnommé « Khalîl Allâh », l'ami intime d'Allah ?","Ibrâhîm",["Mûsâ","Nûh","ʿÎsâ"]],
+["prophetes",2,"Quel prophète est surnommé « Kalîm Allâh », celui à qui Allah a parlé directement ?","Mûsâ",["Ibrâhîm","Âdam","Yûsuf"]],
+["prophetes",2,"Quel prophète a été éprouvé par une longue maladie et est resté patient ?","Ayyûb (Job)",["Yaʿqûb","Yûnus","Zakariyyâ"]],
+["prophetes",2,"Quel prophète a été envoyé au peuple de ʿÂd ?","Hûd",["Sâlih","Chuʿayb","Lût"]],
+["prophetes",2,"Quel prophète a été envoyé au peuple de Thamûd, avec une chamelle comme signe ?","Sâlih",["Hûd","Chuʿayb","Nûh"]],
+["prophetes",2,"Quel prophète a été envoyé au peuple de Madyan ?","Chuʿayb",["Hûd","Sâlih","Lût"]],
+["prophetes",2,"Quel prophète est le père de Yahyâ (Jean-Baptiste) ?","Zakariyyâ",["ʿImrân","Yaʿqûb","Dâwûd"]],
+["prophetes",2,"Pour quel prophète le feu est-il devenu fraîcheur et paix ?","Ibrâhîm",["Mûsâ","Yûsuf","Nûh"]],
+["prophetes",2,"Quel prophète a interprété le rêve du roi d'Égypte sur les sept vaches grasses ?","Yûsuf",["Mûsâ","Dâniyâl","Sulaymân"]],
+["prophetes",2,"Quel frère a aidé Mûsâ dans sa mission ?","Hârûn (Aaron)",["Yûsuf","Ismâʿîl","Yûchaʿ"]],
+["prophetes",2,"Quel prophète a grandi dans le palais de Pharaon ?","Mûsâ",["Yûsuf","Hârûn","Ibrâhîm"]],
+["prophetes",2,"Quel prophète est le fils de Dâwûd ?","Sulaymân",["Yahyâ","Ishâq","Yûnus"]],
+["prophetes",2,"Quel prophète est le père de Yûsuf ?","Yaʿqûb (Jacob)",["Ishâq","Ibrâhîm","Ismâʿîl"]],
+["prophetes",3,"Pendant combien d'années Nûh a-t-il appelé son peuple, selon le Coran ?","950 ans",["40 ans","100 ans","300 ans"],"Sourate Al-ʿAnkabût, verset 14."],
+["prophetes",3,"Quel nom le Coran donne-t-il au père d'Ibrâhîm ?","Âzar",["Târikh","Namrûd","ʿImrân"]],
+["prophetes",3,"Quel prophète est appelé « Dhû n-Nûn », l'homme au poisson ?","Yûnus",["Nûh","Mûsâ","Ilyâs"]],
+["prophetes",3,"Lequel de ces prophètes ne fait PAS partie des « Ulû l-ʿAzm » (les prophètes doués de résolution) ?","Yûsuf",["Nûh","Ibrâhîm","Mûsâ"],"Les cinq sont Nûh, Ibrâhîm, Mûsâ, ʿÎsâ et Muhammad ﷺ."],
+["prophetes",3,"À quel prophète, avec Mûsâ, des « Feuillets » (Suhuf) ont-ils été révélés ?","Ibrâhîm",["Nûh","Dâwûd","Âdam"],"Sourate Al-Aʿlâ, verset 19."],
+["prophetes",3,"Quel prophète est le fils d'Ibrâhîm et de Sâra ?","Ishâq (Isaac)",["Ismâʿîl","Yaʿqûb","Lût"]],
+["prophetes",3,"Comment s'appelle, selon la tradition, l'épouse croyante de Pharaon ?","Âsiya",["Hâjar","Balqîs","Zulaykha"]],
+["prophetes",3,"À quel prophète était lié le peuple de Sodome ?","Lût (Loth)",["Hûd","Chuʿayb","Sâlih"]],
+// ---------- PILIERS ET PRATIQUE ----------
+["piliers",1,"Combien y a-t-il de piliers de l'islam ?","5",["3","6","7"]],
+["piliers",1,"Quel est le premier pilier de l'islam ?","La chahâda (l'attestation de foi)",["La prière","Le jeûne","Le pèlerinage"]],
+["piliers",1,"Combien de prières obligatoires y a-t-il par jour ?","5",["3","7","2"]],
+["piliers",1,"Comment s'appelle l'aumône obligatoire ?","La zakât",["La sadaqa","Le waqf","La jizya"],"La sadaqa est l'aumône volontaire."],
+["piliers",1,"Vers quoi les musulmans se tournent-ils pour prier ?","La Kaʿba, à La Mecque",["Jérusalem","Médine","Le soleil levant"]],
+["piliers",1,"Comment s'appelle l'appel à la prière ?","L'adhân",["L'iqâma","Le takbîr","La khutba"]],
+["piliers",1,"Comment s'appelle la purification faite avant la prière ?","Les ablutions (al-wudû')",["Le tayammum","L'ihrâm","Le tawâf"]],
+["piliers",1,"Combien y a-t-il de piliers de la foi (arkân al-îmân) ?","6",["5","4","7"]],
+["piliers",1,"Quelle fête marque la fin du Ramadan ?","L'Aïd al-Fitr",["L'Aïd al-Adhâ","ʿÂchûrâ'","Le Mawlid"]],
+["piliers",1,"Quelle fête est aussi appelée « la fête du sacrifice » ?","L'Aïd al-Adhâ",["L'Aïd al-Fitr","Laylat al-Qadr","Le jour de ʿArafa"]],
+["piliers",1,"Comment s'appelle la prière de l'aube ?","Al-Fajr (As-Subh)",["Al-ʿAsr","Al-Maghrib","Al-ʿIchâ'"]],
+["piliers",2,"Combien de rakʿa compte la prière du Maghrib ?","3",["2","4","5"]],
+["piliers",2,"Combien de rakʿa compte la prière du Fajr ?","2",["3","4","1"]],
+["piliers",2,"Combien de rakʿa compte la prière du Dhuhr ?","4",["2","3","5"]],
+["piliers",2,"Comment s'appelle la circumambulation autour de la Kaʿba ?","Le tawâf",["Le saʿy","L'ihrâm","Le wuqûf"]],
+["piliers",2,"Combien de tours fait-on autour de la Kaʿba lors du tawâf ?","7",["3","5","10"]],
+["piliers",2,"Entre quelles collines les pèlerins font-ils des allers-retours (le saʿy) ?","Safâ et Marwa",["ʿArafa et Muzdalifa","Uhud et Thawr","Hirâ' et Mina"]],
+["piliers",2,"Quel est le jour le plus important du Hajj, où les pèlerins se tiennent debout en invocation ?","Le jour de ʿArafa",["Le jour de l'Aïd","Le jour de Mina","Le premier jour du tawâf"]],
+["piliers",2,"Quel est le taux habituel de la zakât sur l'argent épargné pendant un an ?","2,5 %",["10 %","5 %","20 %"]],
+["piliers",2,"Comment s'appelle le repas pris avant l'aube pendant le Ramadan ?","Le suhûr",["L'iftâr","Le ftour","La walîma"],"L'iftâr est le repas de rupture du jeûne, au coucher du soleil."],
+["piliers",2,"Comment s'appelle l'aumône donnée avant la prière de l'Aïd al-Fitr ?","Zakât al-Fitr",["La jizya","Le waqf","La kaffâra"]],
+["piliers",2,"Comment s'appelle la purification faite sans eau, avec de la terre propre ?","Le tayammum",["Le wudû'","Le ghusl","L'istinjâ'"]],
+["piliers",2,"Comment s'appelle l'état de sacralisation du pèlerin ?","L'ihrâm",["Le tawâf","Le saʿy","Le taqsîr"]],
+["piliers",2,"Lequel de ces éléments ne fait PAS partie des six piliers de la foi ?","Le pèlerinage",["La croyance aux anges","La croyance aux livres révélés","La croyance au destin"],"Les six : Allah, les anges, les livres, les messagers, le Jour dernier et le destin."],
+["piliers",2,"Comment s'appelle la source d'eau bénie située près de la Kaʿba ?","Zamzam",["Salsabîl","Kawthar","Tasnîm"]],
+["piliers",2,"Comment s'appelle le pèlerinage mineur, possible toute l'année ?","La ʿumra",["Le hajj","La ziyâra","Le ribât"]],
+["piliers",3,"Comment s'appellent les prières surérogatoires de la nuit pendant le Ramadan ?","Les tarâwîh",["Le witr","Le duhâ","Le qunût"]],
+["piliers",3,"Pendant quel mois du calendrier hégirien a lieu le Hajj ?","Dhû l-Hijja",["Ramadan","Chawwâl","Muharram"]],
+["piliers",3,"Comment s'appelle la retraite spirituelle à la mosquée pendant les dix derniers jours du Ramadan ?","L'iʿtikâf",["Le ribât","La khalwa","Le tahajjud"]],
+["piliers",3,"Quelle prière se fait debout, sans inclinaison ni prosternation ?","La prière funéraire (salât al-janâza)",["La prière du vendredi","La prière de l'Aïd","La prière du witr"]],
+["piliers",3,"Comment appelle-t-on le seuil minimum de richesse à partir duquel la zakât est due ?","Le nisâb",["Le hawl","Le mahr","Le fidya"],"Le hawl est la durée d'un an lunaire pendant laquelle la richesse doit être possédée."],
+["piliers",3,"Dans quel lieu les pèlerins passent-ils la nuit après ʿArafa ?","Muzdalifa",["Mina","Qubâ'","Tabûk"]],
+["piliers",3,"Combien de petits cailloux lance-t-on sur la stèle de ʿAqaba le jour du sacrifice ?","7",["3","21","49"]],
+// ---------- HISTOIRE DE L'ISLAM ----------
+["histoire",1,"Qui fut le premier calife après le Prophète ﷺ ?","Abû Bakr",["ʿUmar","ʿUthmân","ʿAlî"]],
+["histoire",1,"Qui fut le deuxième calife ?","ʿUmar ibn al-Khattâb",["Abû Bakr","ʿUthmân","Muʿâwiya"]],
+["histoire",1,"Qui fut le troisième calife ?","ʿUthmân ibn ʿAffân",["ʿAlî","ʿUmar","Abû Bakr"]],
+["histoire",1,"Qui fut le quatrième calife ?","ʿAlî ibn Abî Tâlib",["ʿUthmân","Hasan","Muʿâwiya"]],
+["histoire",1,"En quelle année de notre calendrier a eu lieu l'Hégire ?","622",["570","610","632"]],
+["histoire",1,"Comment appelle-t-on les quatre premiers califes ?","Les califes « bien guidés » (ar-Râchidûn)",["Les Omeyyades","Les Abbassides","Les Ottomans"]],
+["histoire",1,"Quelle ville est la troisième ville sainte de l'islam ?","Jérusalem (Al-Quds)",["Damas","Le Caire","Bagdad"]],
+["histoire",1,"Quelle célèbre mosquée se trouve à Jérusalem ?","Al-Aqsâ",["Al-Azhar","La mosquée des Omeyyades","La mosquée de Qubâ'"]],
+["histoire",2,"Quel calife a instauré le calendrier hégirien ?","ʿUmar",["Abû Bakr","ʿUthmân","ʿAlî"]],
+["histoire",2,"Sous quel calife Jérusalem est-elle entrée dans l'islam ?","ʿUmar",["Abû Bakr","ʿAlî","Hârûn ar-Rachîd"]],
+["histoire",2,"Quelle dynastie a succédé aux califes bien guidés ?","Les Omeyyades",["Les Abbassides","Les Fatimides","Les Ottomans"]],
+["histoire",2,"Quelle était la capitale des Omeyyades ?","Damas",["Bagdad","Le Caire","Cordoue"]],
+["histoire",2,"Quelle ville les Abbassides ont-ils fondée comme capitale ?","Bagdad",["Damas","Médine","Samarcande"]],
+["histoire",2,"Comment s'appelait le grand centre de savoir et de traduction de Bagdad ?","La Maison de la sagesse (Bayt al-Hikma)",["Al-Azhar","Al-Qarawiyyîn","L'Alhambra"]],
+["histoire",2,"Quel chef musulman a repris Jérusalem aux croisés en 1187 ?","Salâh ad-Dîn (Saladin)",["Târiq ibn Ziyâd","Mehmed II","Nûr ad-Dîn"]],
+["histoire",2,"Comment appelait-on l'Espagne musulmane ?","Al-Andalus",["Al-Maghrib","Ifrîqiya","Châm"]],
+["histoire",2,"Quelle ville d'Al-Andalus est célèbre pour sa grande mosquée ?","Cordoue",["Madrid","Barcelone","Valence"]],
+["histoire",2,"Quel empire musulman a conquis Constantinople en 1453 ?","L'Empire ottoman",["Les Abbassides","Les Mamelouks","Les Moghols"]],
+["histoire",2,"Quel savant musulman a donné son nom à « l'algorithme » et est un père de l'algèbre ?","Al-Khwârizmî",["Ibn Sînâ","Ibn Khaldûn","Al-Bîrûnî"]],
+["histoire",2,"Quel médecin a écrit le célèbre « Canon de la médecine » ?","Ibn Sînâ (Avicenne)",["Ibn Rochd (Averroès)","Ar-Râzî","Ibn Battûta"]],
+["histoire",2,"Quel voyageur marocain a parcouru une grande partie du monde au XIVe siècle ?","Ibn Battûta",["Ibn Khaldûn","Al-Idrîsî","Ibn Jubayr"]],
+["histoire",3,"Quel penseur a écrit la « Muqaddima », souvent vue comme un texte fondateur de la sociologie ?","Ibn Khaldûn",["Al-Ghazâlî","Ibn Rochd","Al-Fârâbî"]],
+["histoire",3,"Quel général a traversé le détroit vers l'Espagne en 711 ?","Târiq ibn Ziyâd",["Mûsâ ibn Nusayr","ʿUqba ibn Nâfiʿ","Khâlid ibn al-Walîd"],"Le nom « Gibraltar » vient de « Jabal Târiq », la montagne de Târiq."],
+["histoire",3,"Quelle université de Fès, fondée par une femme, Fâtima al-Fihriyya, est l'une des plus anciennes au monde encore en activité ?","Al-Qarawiyyîn",["Al-Azhar","Az-Zaytûna","Nizâmiyya"]],
+["histoire",3,"Quel célèbre palais se trouve à Grenade ?","L'Alhambra",["Topkapı","Le Taj Mahal","L'Alcazar de Tolède"]],
+["histoire",3,"En quelle année Grenade, dernier royaume d'Al-Andalus, est-elle tombée ?","1492",["1187","1453","1258"]],
+["histoire",3,"Quelle ville a été fondée par les Fatimides en 969 ?","Le Caire",["Bagdad","Kairouan","Fès"]],
+["histoire",3,"Quel savant est considéré comme le père de l'optique moderne ?","Ibn al-Haytham (Alhazen)",["Al-Khwârizmî","Ibn Sînâ","Jâbir ibn Hayyân"]],
+["histoire",3,"Quel sultan ottoman a conquis Constantinople ?","Mehmed II (al-Fâtih)",["Soliman le Magnifique","Selim Ier","Osman Ier"]],
+["histoire",3,"En quelle année Bagdad a-t-elle été détruite par les Mongols ?","1258",["1099","1492","1453"]],
+// ---------- COMPAGNONS ET CULTURE ----------
+["culture",1,"Que signifie le mot « islam » ?","La soumission (à Dieu)",["La prière","La communauté","Le voyage"]],
+["culture",1,"Quel est le premier mois du calendrier hégirien ?","Muharram",["Ramadan","Chawwâl","Rajab"]],
+["culture",1,"Que signifie « Alhamdulillâh » ?","Louange à Dieu",["Dieu est le plus grand","Si Dieu le veut","Au nom de Dieu"]],
+["culture",1,"Que signifie « Inchâ'Allâh » ?","Si Dieu le veut",["Louange à Dieu","Dieu est le plus grand","Gloire à Dieu"]],
+["culture",1,"Comment appelle-t-on l'ensemble des paroles, actes et approbations du Prophète ﷺ ?","La Sunna",["La charia","Le fiqh","La sîra"]],
+["culture",1,"Quel compagnon fut le premier muezzin de l'islam ?","Bilâl ibn Rabâh",["Abû Hurayra","Salmân al-Fârisî","Zayd ibn Thâbit"]],
+["culture",1,"Quel compagnon est surnommé « As-Siddîq », le véridique ?","Abû Bakr",["ʿUmar","ʿUthmân","ʿAlî"]],
+["culture",1,"Quel compagnon est surnommé « Al-Fârûq », celui qui distingue le vrai du faux ?","ʿUmar",["Abû Bakr","ʿAlî","Hamza"]],
+["culture",1,"Combien de mois compte le calendrier hégirien ?","12",["10","13","11"]],
+["culture",1,"Qui était le cousin et le gendre du Prophète ﷺ ?","ʿAlî ibn Abî Tâlib",["ʿUthmân","Abû Bakr","Zayd"]],
+["culture",2,"Quel calife est surnommé « Dhû n-Nûrayn » parce qu'il a épousé deux filles du Prophète ﷺ ?","ʿUthmân",["ʿAlî","ʿUmar","Abû Bakr"]],
+["culture",2,"Quel compagnon a rapporté le plus grand nombre de hadiths ?","Abû Hurayra",["Ibn ʿAbbâs","Anas ibn Mâlik","Muʿâdh ibn Jabal"]],
+["culture",2,"Quelle épouse du Prophète ﷺ est célèbre pour sa grande science et a rapporté de nombreux hadiths ?","ʿÂ'icha",["Sawda","Maymûna","Zaynab"]],
+["culture",2,"Quel compagnon est surnommé « l'épée d'Allah » ?","Khâlid ibn al-Walîd",["Hamza","ʿAlî","ʿAmr ibn al-ʿÂs"]],
+["culture",2,"Quel compagnon venait de Perse ?","Salmân al-Fârisî",["Bilâl","Suhayb ar-Rûmî","Abû Dharr"],"Bilâl venait d'Abyssinie et Suhayb avait grandi chez les Byzantins (Rûm)."],
+["culture",2,"Quels sont les deux recueils de hadiths considérés comme les plus authentiques ?","Sahîh al-Bukhârî et Sahîh Muslim",["Le Muwatta' et le Musnad","Les Sunan d'Abû Dâwûd et d'At-Tirmidhî","Riyâd as-Sâlihîn et Al-Arbaʿîn"]],
+["culture",2,"Qui fut la première martyre de l'islam ?","Sumayya",["Khadîja","Nusayba","Asmâ'"]],
+["culture",2,"Quel est le rang de Ramadan dans le calendrier hégirien ?","Le 9e mois",["Le 1er mois","Le 7e mois","Le 12e mois"]],
+["culture",2,"Que signifie « Hijra » ?","L'émigration",["La victoire","La prière","Le pèlerinage"]],
+["culture",2,"Quel jour est ʿÂchûrâ' ?","Le 10 Muharram",["Le 27 Ramadan","Le 1er Chawwâl","Le 10 Dhû l-Hijja"]],
+["culture",2,"Lequel de ces savants n'a PAS fondé d'école juridique sunnite ?","Al-Bukhârî",["Abû Hanîfa","Mâlik ibn Anas","Ach-Châfiʿî"],"Les quatre écoles : hanafite, malikite, chafiite et hanbalite."],
+["culture",2,"Quelle école juridique est majoritaire au Maroc ?","L'école malikite",["L'école hanafite","L'école chafiite","L'école hanbalite"]],
+["culture",3,"Combien de compagnons ont été promis au Paradis dans un même hadith ?","10",["4","7","40"]],
+["culture",3,"Quelle épouse du Prophète ﷺ était la fille de ʿUmar ?","Hafsa",["ʿÂ'icha","Umm Salama","Zaynab"]],
+["culture",3,"Quel compagnon était surnommé « l'homme de confiance de cette communauté » ?","Abû ʿUbayda ibn al-Jarrâh",["Abû Bakr","Muʿâdh ibn Jabal","Saʿd ibn Abî Waqqâs"]],
+["culture",3,"Quel jeune compagnon le Prophète ﷺ a-t-il nommé à la tête d'une armée juste avant sa mort ?","Usâma ibn Zayd",["ʿAbdullâh ibn ʿUmar","Anas ibn Mâlik","Muʿâdh ibn Jabal"]],
+["culture",3,"Quel titre portent les épouses du Prophète ﷺ ?","Mères des croyants (Ummahât al-Mu'minîn)",["Filles de l'islam","Dames du Paradis","Sœurs des croyants"]],
+["culture",3,"Quelle école juridique est majoritaire en Turquie ?","L'école hanafite",["L'école malikite","L'école chafiite","L'école hanbalite"]],
+["culture",3,"Quel imam est l'auteur du « Muwatta' », l'un des plus anciens recueils de hadiths ?","L'imam Mâlik",["L'imam al-Bukhârî","L'imam Ahmad","L'imam an-Nawawî"]],
+];
+
+(() => {
+"use strict";
+/* ============ données ============ */
+const CATS = {
+  coran: { name: "Le Coran", color: "#2E9E5B" }, sira: { name: "Vie du Prophète ﷺ", color: "#E8862F" }, prophetes: { name: "Les prophètes", color: "#3D7FD6" },
+  piliers: { name: "Piliers et pratique", color: "#D24B6A" }, histoire: { name: "Histoire de l'islam", color: "#8A5CD0" }, culture: { name: "Compagnons et culture", color: "#E2B72E", ink: "#2A2118" },
+};
+const KEYS = Object.keys(CATS);
+const SPEC = {
+  oasis: { name: "Oasis", txt: "Oasis : tu rejoues !", icon: "i-oasis" },
+  vent: { name: "Vent", txt: "Vent favorable : +2 cases !", icon: "i-vent" },
+  sable: { name: "Tempête", txt: "Tempête de sable : −3 cases…", icon: "i-sable" },
+  puits: { name: "Puits", txt: "Le puits : tu passes ton prochain tour.", icon: "i-puits" },
+};
+const PCOL = ["#1FA37A", "#E0533F", "#3D7FD6", "#F2B441", "#9B6AE0", "#EE7FB0"];
+const MODES = { duo: { name: "Duo", sub: "2 réponses", color: "var(--duo)" }, carre: { name: "Carré", sub: "4 réponses", color: "var(--carre)", ink: "#2A1A05" }, cash: { name: "Cash", sub: "sans aide", color: "var(--cash)" } };
+const steps = (mode, d) => mode === "cash" ? d + 3 : mode === "carre" ? d : Math.ceil(d / 2);
+const Q = QDATA.map((r, i) => ({ id: i, cat: r[0], d: r[1], q: r[2], a: r[3], w: r[4], note: r[5] || "" }));
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const store = { get(k, d) { try { const v = localStorage.getItem("caravane:" + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem("caravane:" + k, JSON.stringify(v)); } catch (e) {} }, del(k) { try { localStorage.removeItem("caravane:" + k); } catch (e) {} } };
+const camel = (c, w = 20) => `<svg viewBox="0 0 40 32" style="width:${w}px;height:${w * .8}px"><use href="#camel" fill="${c}"/></svg>`;
+const av = i => `<span class="av" style="background:${PCOL[i]}33">${camel(PCOL[i])}</span>`;
+
+/* ============ sons (synthétisés, aucun fichier) ============ */
+let actx = null, muted = store.get("muted", false);
+function ac() { if (muted) return null; try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === "suspended") actx.resume(); } catch (e) { actx = null; } return actx; }
+function tone(f, t0, dur, type = "sine", vol = .18, f2) { const a = ac(); if (!a) return; const o = a.createOscillator(), g = a.createGain(); o.type = type; o.frequency.setValueAtTime(f, a.currentTime + t0); if (f2) o.frequency.exponentialRampToValueAtTime(f2, a.currentTime + t0 + dur); g.gain.setValueAtTime(0, a.currentTime + t0); g.gain.linearRampToValueAtTime(vol, a.currentTime + t0 + .01); g.gain.exponentialRampToValueAtTime(.001, a.currentTime + t0 + dur); o.connect(g).connect(a.destination); o.start(a.currentTime + t0); o.stop(a.currentTime + t0 + dur + .05); }
+function noise(t0, dur, vol = .12) { const a = ac(); if (!a) return; const b = a.createBuffer(1, a.sampleRate * dur, a.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length); const s = a.createBufferSource(), g = a.createGain(), f = a.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 2500; s.buffer = b; g.gain.value = vol; s.connect(f).connect(g).connect(a.destination); s.start(a.currentTime + t0); }
+const SFX = {
+  dice() { for (let i = 0; i < 7; i++) noise(i * .09, .05, .15); },
+  step(i) { tone(520 + i * 30, 0, .09, "triangle", .12); },
+  good() { [523, 659, 784, 1046].forEach((f, i) => tone(f, i * .09, .35, "triangle", .16)); },
+  bad() { tone(300, 0, .25, "sawtooth", .08, 180); tone(220, .2, .35, "sawtooth", .07, 120); },
+  bonus() { tone(700, 0, .15, "sine", .14, 1400); tone(900, .12, .25, "sine", .12, 1800); },
+  whoosh() { noise(0, .45, .1); },
+  win() { [523, 523, 659, 784, 659, 784, 1046].forEach((f, i) => tone(f, i * .14, .3, "square", .07)); [262, 330, 392].forEach(f => tone(f, 1, 1.2, "triangle", .08)); },
+  tap() { tone(880, 0, .05, "sine", .06); },
+};
+const buzz = p => { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} };
+
+/* ============ effets : confettis & feux d'artifice ============ */
+const fx = $("#fx"), ctx = fx.getContext("2d"); let parts = [], fxOn = false;
+function fxSize() { const d = Math.min(2, window.devicePixelRatio || 1); fx.width = innerWidth * d; fx.height = innerHeight * d; ctx.setTransform(d, 0, 0, d, 0, 0); }
+fxSize(); addEventListener("resize", fxSize);
+const FXC = ["#F2B441", "#2E9E5B", "#3D7FD6", "#D24B6A", "#8A5CD0", "#FFFFFF", "#E8862F"];
+function confetti(x, y, n = 70) { for (let i = 0; i < n; i++) { const a = -Math.PI / 2 + (Math.random() - .5) * 2.2, s = 5 + Math.random() * 8; parts.push({ k: "c", x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, g: .25, life: 90 + Math.random() * 40, c: FXC[i % FXC.length], r: Math.random() * 6, w: 5 + Math.random() * 5, h: 3 + Math.random() * 4, vr: (Math.random() - .5) * .3 }); } loop(); }
+function firework(x, y) { const c = FXC[Math.floor(Math.random() * FXC.length)], n = 60; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2, s = 2 + Math.random() * 4.5; parts.push({ k: "f", x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, g: .06, life: 60 + Math.random() * 30, c, tr: [] }); } loop(); }
+function rocket(x) { const y0 = innerHeight + 10, ty = innerHeight * (.15 + Math.random() * .3); parts.push({ k: "r", x, y: y0, vx: (Math.random() - .5) * 1.5, vy: -(Math.sqrt(2 * .15 * (y0 - ty))), g: .15, life: 999, c: "#FFE9B0", ty }); loop(); }
+function show(fn, times, gap) { for (let i = 0; i < times; i++) setTimeout(fn, i * gap); }
+function loop() { if (fxOn) return; fxOn = true; requestAnimationFrame(tick); }
+function tick() {
+  ctx.clearRect(0, 0, innerWidth, innerHeight);
+  parts = parts.filter(p => p.life > 0);
+  for (const p of parts) {
+    p.life--; p.vy += p.g; p.x += p.vx; p.y += p.vy;
+    if (p.k === "c") { p.vx *= .985; p.r += p.vr; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.globalAlpha = Math.min(1, p.life / 30); ctx.fillStyle = p.c; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); ctx.restore(); }
+    else if (p.k === "f") { p.vx *= .97; p.vy *= .97; ctx.globalAlpha = Math.min(1, p.life / 25); ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, 2.2, 0, 7); ctx.fill(); }
+    else if (p.k === "r") { ctx.globalAlpha = 1; ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, 2.5, 0, 7); ctx.fill(); if (p.vy >= 0 || p.y <= p.ty) { p.life = 0; firework(p.x, p.y); tone(200 + Math.random() * 200, 0, .3, "sine", .05, 80); } }
+  }
+  ctx.globalAlpha = 1;
+  if (parts.length) requestAnimationFrame(tick); else { fxOn = false; ctx.clearRect(0, 0, innerWidth, innerHeight); }
+}
+
+/* ============ plateau ============ */
+const W = 360, H = 640;
+const PATH = "M58 588 C140 618 262 612 300 566 C338 520 306 480 238 478 C160 476 70 470 58 414 C46 358 104 340 176 340 C258 340 318 322 308 268 C298 214 226 208 156 208 C88 208 46 184 56 140 C66 96 138 92 198 96 C250 100 290 106 304 84";
+let geo = null;
+function makeCells(n) {
+  const specAt = {};
+  const put = (fr, t) => fr.forEach(f => { let i = Math.round(f * (n - 1)); while (specAt[i] || i < 2 || i > n - 3) i++; specAt[i] = t; });
+  put([.14, .46, .78], "oasis"); put([.22, .54, .84], "vent"); put([.3, .62, .9], "sable"); put([.38, .7], "puits");
+  const seq = []; for (let r = 0; r < 12; r++) seq.push(...shuffle(KEYS)); let k = 0;
+  return Array.from({ length: n }, (_, i) => i === 0 ? { t: "start" } : i === n - 1 ? { t: "end" } : specAt[i] ? { t: specAt[i] } : { t: "cat", cat: seq[k++] });
+}
+function computeGeo(n) {
+  const p = document.createElementNS("http://www.w3.org/2000/svg", "path"); p.setAttribute("d", PATH);
+  const tmp = document.createElementNS("http://www.w3.org/2000/svg", "svg"); tmp.style.position = "absolute"; tmp.style.width = 0; tmp.appendChild(p); document.body.appendChild(tmp);
+  const L = p.getTotalLength(), pts = []; for (let i = 0; i < n; i++) { const q = p.getPointAtLength(L * i / (n - 1)); pts.push({ x: q.x, y: q.y }); }
+  tmp.remove(); const r = Math.min(16, (L / (n - 1)) * .43); return { pts, r };
+}
+function boardSVG() {
+  const n = game.cells.length; geo = computeGeo(n); const { pts, r } = geo;
+  const deco = [
+    ["palm", 20, 440, 34], ["palm", 300, 360, 40], ["palm", 16, 230, 30], ["palm", 318, 150, 34], ["palm", 150, 250, 26], ["palm", 210, 520, 30],
+    ["well", 250, 390, 26], ["well", 90, 110, 22],
+  ];
+  const dunes = `<path d="M0 520 Q60 490 120 515 T240 505 T360 500 V640 H0Z" fill="#E0B870" opacity=".55"/><path d="M0 300 Q80 270 150 295 T300 285 T360 290 V360 Q300 350 240 360 T120 355 T0 360Z" fill="#EDC98A" opacity=".5"/><path d="M0 170 Q70 150 140 168 T280 160 T360 165 V200 Q280 190 200 200 T0 200Z" fill="#EDC98A" opacity=".45"/>`;
+  const stars = Array.from({ length: 22 }, (_, i) => `<circle cx="${(i * 71) % 360}" cy="${4 + (i * 37) % 40}" r="${i % 3 ? .8 : 1.3}" fill="#fff" opacity="${.4 + (i % 4) * .15}"/>`).join("");
+  let sq = "";
+  pts.forEach((p, i) => {
+    const c = game.cells[i];
+    if (c.t === "start" || c.t === "end") return;
+    if (c.t === "cat") sq += `<g filter="url(#sh)"><circle cx="${p.x}" cy="${p.y}" r="${r}" fill="${CATS[c.cat].color}" stroke="#FFF6E0" stroke-width="2.4"/><circle cx="${p.x}" cy="${p.y}" r="${r * .62}" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="1.2"/><text class="sq-num" x="${p.x}" y="${p.y + 3}" text-anchor="middle">${i}</text></g>`;
+    else sq += `<g filter="url(#sh)"><circle cx="${p.x}" cy="${p.y}" r="${r + 1.5}" fill="#FFF3D6" stroke="#8A5A2B" stroke-width="2" stroke-dasharray="3 2"/><use href="#${SPEC[c.t].icon}" x="${p.x - r * .75}" y="${p.y - r * .75}" width="${r * 1.5}" height="${r * 1.5}"/></g>`;
+  });
+  const s0 = pts[0], sE = pts[n - 1];
+  return `<svg id="board" viewBox="0 0 ${W} ${H}" role="img" aria-label="Plateau de jeu">
+    <rect width="${W}" height="${H}" fill="url(#sand)"/>
+    <rect width="${W}" height="70" fill="url(#sky)"/><path d="M0 70 Q90 56 180 66 T360 62 V74 H0Z" fill="#E4BE7C"/>${stars}
+    <circle cx="40" cy="26" r="11" fill="#FFF3C4"/><circle cx="45" cy="22" r="10" fill="#3A2F63"/>
+    ${dunes}
+    <path d="${PATH}" fill="none" stroke="#B98B4E" stroke-width="${r * 2 + 10}" stroke-linecap="round" opacity=".45"/>
+    <path d="${PATH}" fill="none" stroke="#FFF1D2" stroke-width="3" stroke-dasharray="2 9" stroke-linecap="round" opacity=".9"/>
+    ${deco.map(([id, x, y, w]) => `<use href="#${id}" x="${x}" y="${y}" width="${w}" height="${id === "palm" ? w * 1.5 : w}"/>`).join("")}
+    <use href="#tent" x="${s0.x - 52}" y="${s0.y - 58}" width="54" height="36"/><use href="#tent" x="${s0.x - 18}" y="${s0.y - 64}" width="40" height="27"/>
+    <g filter="url(#sh)"><circle cx="${s0.x}" cy="${s0.y}" r="${r + 6}" fill="#1B1530" stroke="#F2B441" stroke-width="3"/><text x="${s0.x}" y="${s0.y + 4}" text-anchor="middle" style="font:800 10px var(--f-body);fill:#F2B441">DÉPART</text></g>
+    <use href="#city" x="${sE.x - 70}" y="${sE.y - 82}" width="120" height="70"/>
+    <g filter="url(#sh)"><circle cx="${sE.x}" cy="${sE.y}" r="${r + 7}" fill="#F2B441" stroke="#FFF3C4" stroke-width="3"/><text x="${sE.x}" y="${sE.y + 4}" text-anchor="middle" style="font:800 9.5px var(--f-body);fill:#2A1A05">ARRIVÉE</text></g>
+    ${sq}
+    <g id="marks"></g><g id="pawns"></g>
+  </svg>`;
+}
+function pawnOffset(i, pos) {
+  const same = game.players.map((p, j) => [p, j]).filter(([p]) => p.pos === pos).map(([, j]) => j), k = same.indexOf(i), m = same.length;
+  if (m <= 1) return [0, 0]; const a = (k / m) * Math.PI * 2; return [Math.cos(a) * geo.r * .55, Math.sin(a) * geo.r * .45];
+}
+function drawPawns() {
+  const g = $("#pawns"); if (!g) return;
+  const order = game.players.map((_, i) => i).filter(i => i !== game.cur).concat(game.cur);
+  g.innerHTML = order.map(i => { const p = game.players[i], pt = geo.pts[p.pos], [ox, oy] = pawnOffset(i, p.pos), s = geo.r * 2.1;
+    return `<g class="pawn ${i === game.cur ? "cur" : ""}" id="pw${i}" transform="translate(${pt.x + ox} ${pt.y + oy})"><g class="pbody"><ellipse cx="0" cy="2" rx="${s * .42}" ry="${s * .12}" fill="rgba(60,30,5,.35)"/><use href="#camel" x="${-s / 2}" y="${-s * .78}" width="${s}" height="${s * .8}" fill="${PCOL[i]}" stroke="#FFF6E0" stroke-width="1.6" paint-order="stroke"/></g></g>`; }).join("");
+}
+function markDest(list) { const g = $("#marks"); if (!g) return; g.innerHTML = (list || []).map(([i, c]) => { const p = geo.pts[i]; return `<circle class="pulse" cx="${p.x}" cy="${p.y}" r="${geo.r + 5}" fill="none" stroke="${c}" stroke-width="3.5"/>`; }).join(""); }
+async function animateMove(pi, from, to) {
+  const dir = to > from ? 1 : -1; const el = () => $("#pw" + pi);
+  for (let s = from; s !== to; s += dir) {
+    const a = geo.pts[s], b = geo.pts[s + dir]; const t0 = performance.now(), D = 260;
+    SFX.step(Math.abs(s - from)); buzz(8);
+    await new Promise(res => { const f = now => { const t = Math.min(1, (now - t0) / D), e = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; const x = a.x + (b.x - a.x) * e, y = a.y + (b.y - a.y) * e - Math.sin(Math.PI * t) * 14; const node = el(); if (node) node.setAttribute("transform", `translate(${x} ${y})`); t < 1 ? requestAnimationFrame(f) : res(); }; requestAnimationFrame(f); });
+  }
+  game.players[pi].pos = to; drawPawns();
+}
+
+/* ============ voix ============ */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const canSpeak = "speechSynthesis" in window;
+function speak(text) { if (!canSpeak || muted) return; try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text.replace(/ﷺ/g, "")); u.lang = "fr-FR"; u.rate = .95; speechSynthesis.speak(u); } catch (e) {} }
+const normT = s => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[ʿ'’`«»"()?!.,;:\-]/g, " ").replace(/\b(le|la|les|l|un|une|des|de|du|d|al|an|ar|as|at|ad|az|ach|el|ibn|bint|environ|ans|fois|sourate)\b/g, " ").replace(/\s+/g, " ").trim();
+function lev(a, b) { const m = a.length, n = b.length; if (!m) return n; if (!n) return m; const d = Array.from({ length: m + 1 }, (_, i) => [i]); for (let j = 1; j <= n; j++) d[0][j] = j; for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); return d[m][n]; }
+const sim = (a, b) => (!a || !b) ? 0 : 1 - lev(a, b) / Math.max(a.length, b.length);
+function variants(ans) { const v = new Set([ans]); const m = ans.match(/^(.*?)\s*\((.*?)\)\s*$/); if (m) { v.add(m[1]); v.add(m[2]); } return [...v].map(normT).filter(Boolean); }
+function score(heard, ans) { const h = normT(heard); let best = 0; for (const v of variants(ans)) { if (h === v || h.includes(v)) return 1; best = Math.max(best, sim(h, v)); const toks = v.split(" ").filter(t => t.length >= 3 || /\d/.test(t)), ht = h.split(" "); if (toks.length) best = Math.max(best, toks.filter(t => ht.some(x => x === t || sim(x, t) >= .72)).length / toks.length * .95); } return best; }
+let rec = null;
+function listen(onText, onErr) { if (!SR) { onErr("unsupported"); return; } try { const r = new SR(); r.lang = "fr-FR"; r.interimResults = true; let fin = ""; r.onresult = e => { let t = ""; for (const x of e.results) t += x[0].transcript; fin = t; onText(t, false); }; r.onerror = e => onErr(e.error || "error"); r.onend = () => onText(fin, true); r.start(); rec = r; } catch (e) { onErr("error"); } }
+function stopRec() { try { rec && rec.abort(); } catch (e) {} rec = null; }
+const micMsg = c => ({ unsupported: "La réponse vocale n'est pas disponible ici. Elle marche sur le site en ligne avec Safari ou Chrome.", "not-allowed": "Micro bloqué. Autorise le micro pour ce site dans les réglages du navigateur. (Dans Claude, le micro n'est pas disponible : utilise le site en ligne.)", "no-speech": "Je n'ai rien entendu. Réessaie en parlant près du téléphone.", network: "La reconnaissance vocale a besoin d'Internet.", "service-not-allowed": "Reconnaissance vocale indisponible ici : utilise le site en ligne." }[c] || "La reconnaissance vocale n'a pas marché. Réponds à voix haute au groupe.");
+const MIC = `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3" stroke="currentColor" stroke-width="2" fill="none"/></svg>`;
+
+/* ============ état ============ */
+let setup = store.get("setup3", { players: [{ name: "Joueur 1", level: "normal" }, { name: "Joueur 2", level: "normal" }], size: 36, timer: false, read: true });
+let game = store.get("game3", null), busy = false;
+function save() { store.set("setup3", setup); if (game) store.set("game3", game); else store.del("game3"); }
+const root = $("#root");
+function levelRange(level, final) { if (final) return level === "facile" ? [2, 3] : [3, 3]; return { facile: [1, 1], normal: [1, 2], expert: [2, 3] }[level]; }
+function draw(cat, level, final) {
+  const [lo, hi] = levelRange(level, final); const seen = new Set(store.get("seen", [])), used = new Set(game.used);
+  let pool = Q.filter(q => q.cat === cat && q.d >= lo && q.d <= hi && !used.has(q.id));
+  if (!pool.length) pool = Q.filter(q => q.cat === cat && !used.has(q.id)); if (!pool.length) pool = Q.filter(q => q.cat === cat);
+  const fresh = pool.filter(q => !seen.has(q.id)); const q = shuffle(fresh.length ? fresh : pool)[0];
+  game.used.push(q.id); seen.add(q.id); let arr = [...seen]; if (Q.filter(x => x.cat === cat).every(x => seen.has(x.id))) arr = arr.filter(id => Q[id].cat !== cat);
+  store.set("seen", arr); return q.id;
+}
+
+/* ============ accueil ============ */
+function renderSetup() {
+  closeSheet(); document.body.classList.remove("ingame");
+  root.innerHTML = `<div class="setup">
+    <div class="hero">
+      <svg viewBox="0 0 320 120" aria-hidden="true"><path d="M0 110 Q80 80 160 100 T320 95 V120 H0Z" fill="#E4BE7C"/><use href="#palm" x="10" y="30" width="44" height="70"/><use href="#palm" x="270" y="36" width="40" height="64"/><use href="#city" x="190" y="30" width="110" height="64"/>
+        <g><use href="#camel" x="60" y="62" width="50" height="40" fill="${PCOL[0]}"/><use href="#camel" x="108" y="66" width="44" height="35" fill="${PCOL[1]}"/><use href="#camel" x="150" y="70" width="38" height="30" fill="${PCOL[2]}"/></g></svg>
+      <h1>La Caravane du Savoir</h1>
+      <p>Lance le dé, réponds aux questions sur l'islam et fais avancer ta caravane jusqu'à la ville. Plus tu prends de risques, plus tu avances vite.</p>
+    </div>
+    <div class="rules">
+      <div class="rule" style="background:var(--duo)"><b>Duo</b><span>2 réponses<br>moitié du dé</span></div>
+      <div class="rule" style="background:var(--carre);color:#2A1A05"><b>Carré</b><span>4 réponses<br>valeur du dé</span></div>
+      <div class="rule" style="background:var(--cash)"><b>Cash</b><span>sans aide<br>dé + 3 cases</span></div>
+    </div>
+    <section class="panel">
+      <p class="lab2">Les caravanes (2 à 6 joueurs ou équipes)</p>
+      ${setup.players.map((p, i) => `<div class="prow">${av(i).replace('class="av"', 'class="av"')}<input id="pn${i}" value="${esc(p.name)}" maxlength="16" aria-label="Nom ${i + 1}"><select id="pl${i}" aria-label="Niveau"><option value="facile" ${p.level === "facile" ? "selected" : ""}>Facile</option><option value="normal" ${p.level === "normal" ? "selected" : ""}>Normal</option><option value="expert" ${p.level === "expert" ? "selected" : ""}>Expert</option></select>${setup.players.length > 2 ? `<button class="x" data-rm="${i}" aria-label="Retirer">×</button>` : "<span></span>"}</div>`).join("")}
+      ${setup.players.length < 6 ? `<button class="addbtn" id="add">+ Ajouter une caravane</button>` : ""}
+      <p class="hint">Le niveau règle la difficulté des questions de chaque joueur : facile pour les enfants, expert pour les plus calés.</p>
+    </section>
+    <section class="panel">
+      <p class="lab2">Longueur du voyage</p>
+      <div class="seg"><button data-s="24" aria-pressed="${setup.size === 24}">Court · 24</button><button data-s="36" aria-pressed="${setup.size === 36}">Moyen · 36</button><button data-s="48" aria-pressed="${setup.size === 48}">Long · 48</button></div>
+      <p class="lab2">Options</p>
+      <div class="seg"><button data-o="read" aria-pressed="${setup.read}">Lecture des questions</button><button data-o="timer" aria-pressed="${setup.timer}">Chrono 30 s</button></div>
+      <p class="hint">Réponse au micro : ${SR ? "disponible sur ce navigateur." : "indisponible ici ; elle marche sur le site en ligne (Safari ou Chrome)."} Série de 3 bonnes réponses : +2 cases bonus.</p>
+    </section>
+    <button class="big w" id="start">Partir à l'aventure</button>
+    <p class="hint" style="text-align:center">${Q.length} questions · Coran, vie du Prophète ﷺ, prophètes, piliers, histoire, compagnons</p>
+  </div>`;
+  const read = () => setup.players.forEach((p, i) => { const n = $("#pn" + i), l = $("#pl" + i); if (n) p.name = n.value.trim() || "Joueur " + (i + 1); if (l) p.level = l.value; });
+  root.querySelectorAll("input,select").forEach(el => el.onchange = () => { read(); save(); });
+  const add = $("#add"); if (add) add.onclick = () => { read(); setup.players.push({ name: "Joueur " + (setup.players.length + 1), level: "normal" }); save(); renderSetup(); };
+  root.querySelectorAll("[data-rm]").forEach(b => b.onclick = () => { read(); setup.players.splice(+b.dataset.rm, 1); save(); renderSetup(); });
+  root.querySelectorAll("[data-s]").forEach(b => b.onclick = () => { read(); setup.size = +b.dataset.s; save(); renderSetup(); });
+  root.querySelectorAll("[data-o]").forEach(b => b.onclick = () => { read(); setup[b.dataset.o] = !setup[b.dataset.o]; save(); renderSetup(); });
+  $("#start").onclick = () => { read(); SFX.bonus(); game = newGame(setup.size, setup.players); save(); renderGame(); window.scrollTo(0, 0); };
+}
+const newGame = (size, pl) => ({ cells: makeCells(size), players: pl.map(p => ({ name: p.name, level: p.level, pos: 0, skip: false, good: 0, streak: 0 })), cur: 0, phase: "roll", used: [], die: 1, q: null, winner: null, timer: setup.timer, read: setup.read });
+
+/* ============ partie ============ */
+const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+const face = (v, cls) => `<div class="face ${cls}">${Array.from({ length: 9 }, (_, i) => `<i class="${PIPS[v].includes(i) ? "on" : ""}"></i>`).join("")}</div>`;
+const ROT = { 1: [0, 0], 2: [0, -90], 3: [-90, 0], 4: [90, 0], 5: [0, 90], 6: [0, 180] };
+let spin = 0;
+function renderGame() {
+  root.innerHTML = `<div class="top"><div class="chips" id="chips"></div>
+      <button class="icon-btn" id="snd" aria-label="${muted ? "Activer" : "Couper"} le son">${muted ? `<svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6" stroke="currentColor" stroke-width="2"/></svg>` : `<svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8a5 5 0 0 1 0 8M18.5 5a9 9 0 0 1 0 14" stroke="currentColor" stroke-width="2" fill="none"/></svg>`}</button>
+      <button class="icon-btn" id="quit" aria-label="Quitter la partie"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2.4"/></svg></button></div>
+    <div class="boardwrap">${boardSVG()}</div>
+    <div class="dock"><div class="dock-in" id="dock"></div></div>
+    <div class="sheet" id="sheet"><div class="card" id="card"></div></div>
+    <div class="toast" id="toast"></div>
+    <div class="win" id="win"></div>`;
+  $("#snd").onclick = () => { muted = !muted; store.set("muted", muted); if (muted) try { speechSynthesis.cancel(); } catch (e) {} renderGame(); };
+  $("#quit").onclick = () => { if ($("#quit").dataset.sure) { stopRec(); try { speechSynthesis.cancel(); } catch (e) {} game = null; save(); renderSetup(); } else { $("#quit").dataset.sure = "1"; $("#quit").style.background = "var(--ko)"; toast("Touche encore la croix pour quitter", "", "#6B4526", 1600); setTimeout(() => { const q = $("#quit"); if (q) { delete q.dataset.sure; q.style.background = ""; } }, 2500); } };
+  drawPawns(); chips(); step();
+}
+function chips() { const c = $("#chips"); if (!c) return; c.innerHTML = game.players.map((p, i) => `<div class="chip ${i === game.cur ? "cur" : ""}">${av(i)}<span>${esc(p.name)} <small>· ${p.pos}</small>${p.streak >= 2 ? ` <span class="fire">×${p.streak}</span>` : ""}${p.skip ? ` <small>(puits)</small>` : ""}</span></div>`).join(""); const cur = c.querySelector(".cur"); if (cur) cur.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" }); }
+function toast(t, s, bg, ms = 1500) { const el = $("#toast"); if (!el) return; el.innerHTML = `<span class="t" style="background:${bg}">${t}</span>${s ? `<span class="s">${s}</span>` : ""}`; el.classList.add("show"); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove("show"), ms); }
+function openSheet(html) { const c = $("#card"); c.innerHTML = html; c.scrollTop = 0; requestAnimationFrame(() => $("#sheet").classList.add("open")); }
+function closeSheet() { const s = $("#sheet"); if (s) s.classList.remove("open"); markDest([]); }
+function step() {
+  chips(); drawPawns();
+  if (game.winner != null) return showWin();
+  const p = game.players[game.cur], dock = $("#dock");
+  if (game.phase === "roll") {
+    closeSheet();
+    if (p.skip) {
+      dock.innerHTML = `<div class="who"><small>Au fond du puits…</small><b style="color:${PCOL[game.cur]}">${esc(p.name)}</b></div><button class="big" id="go">Passer le tour</button>`;
+      $("#go").onclick = () => { SFX.tap(); p.skip = false; next(); }; return;
+    }
+    const atEnd = p.pos >= game.cells.length - 1;
+    dock.innerHTML = atEnd ? `<div class="who"><small>Aux portes de la ville !</small><b style="color:${PCOL[game.cur]}">${esc(p.name)}</b></div><button class="big" id="go">Question finale</button>`
+      : `<div class="dice" aria-hidden="true"><div class="cube" id="cube" style="transform:rotateX(${ROT[game.die][0]}deg) rotateY(${ROT[game.die][1]}deg)">${face(1, "f1")}${face(2, "f2")}${face(3, "f3")}${face(4, "f4")}${face(5, "f5")}${face(6, "f6")}</div></div><div class="who"><small>À toi de jouer</small><b style="color:${PCOL[game.cur]}">${esc(p.name)}</b></div><button class="big" id="go">Lancer</button>`;
+    $("#go").onclick = atEnd ? () => { SFX.tap(); game.phase = "pick"; save(); step(); } : roll;
+  } else if (game.phase === "pick") {
+    dock.innerHTML = "";
+    openSheet(`<div class="band" style="background:linear-gradient(90deg,#8A5A0C,#F2B441)"><span>Question finale</span></div><div class="cbody"><p class="qfor">Pour ${esc(p.name)} · les autres choisissent la catégorie</p><div class="pickcat">${KEYS.map(k => `<button data-k="${k}" style="background:${CATS[k].color};color:${CATS[k].ink || "#fff"}">${CATS[k].name}</button>`).join("")}</div><p class="tiny">La question finale se joue en Cash. Si elle est ratée, la caravane recule de 3 cases.</p></div>`);
+    $("#card").querySelectorAll("[data-k]").forEach(b => b.onclick = () => { SFX.tap(); const k = b.dataset.k; game.q = { id: draw(k, p.level, true), cat: k, mode: "cash", final: true }; game.phase = "question"; save(); step(); });
+  } else if (game.phase === "question") { dock.innerHTML = ""; renderQuestion(); }
+}
+async function roll() {
+  if (busy) return; busy = true; $("#go").disabled = true; SFX.dice(); buzz([20, 40, 20]);
+  const v = 1 + Math.floor(Math.random() * 6); spin += 2;
+  const cube = $("#cube"); cube.style.transform = `rotateX(${ROT[v][0] + 360 * spin}deg) rotateY(${ROT[v][1] + 360 * spin}deg) rotateZ(${spin % 2 ? 0 : 0}deg)`;
+  await sleep(1050); game.die = v;
+  const p = game.players[game.cur], cell = game.cells[p.pos];
+  const cat = cell.t === "cat" ? cell.cat : KEYS[Math.floor(Math.random() * 6)];
+  toast(`${v}`, "", "#2A2118", 700); await sleep(500);
+  game.q = { id: draw(cat, p.level, false), cat, mode: null, final: false }; game.phase = "question"; save(); busy = false; step();
+}
+let tmr = null;
+function renderQuestion() {
+  clearInterval(tmr);
+  const p = game.players[game.cur], g = game.q, q = Q[g.id], c = CATS[g.cat], n = game.cells.length;
+  const destOf = m => Math.min(n - 1, p.pos + steps(m, game.die));
+  const lab = i => { const t = game.cells[i].t; return t === "end" ? "Arrivée !" : t === "cat" ? "case " + i : SPEC[t].name; };
+  const head = `<div class="band" style="background:${c.color};color:${c.ink || "#fff"}"><span>${c.name}</span><span class="sp"></span><span class="pill">${g.final ? "Finale" : "Dé " + game.die}</span></div>
+    <div class="cbody"><p class="qfor"><span style="color:${PCOL[game.cur]}">${esc(p.name)}</span> · ${["", "facile", "moyenne", "difficile"][q.d]}${canSpeak && !muted ? `<button class="say" id="say">Relire</button>` : ""}</p><div class="qtext">${esc(q.q)}</div>${game.timer && g.mode ? `<div class="timer"><i id="bar"></i></div>` : ""}<div id="zone"></div></div>`;
+  openSheet(head);
+  if ($("#say")) $("#say").onclick = () => speak(q.q);
+  const zone = $("#zone");
+  if (!g.mode) {
+    if (game.read && !g.spoken) { speak(q.q); g.spoken = true; save(); }
+    markDest([[destOf("duo"), "#3D7FD6"], [destOf("carre"), "#E7A52C"], [destOf("cash"), "#D2493A"]]);
+    zone.innerHTML = `<div class="modes">${["duo", "carre", "cash"].map(m => `<button class="mode" data-m="${m}" style="background:${MODES[m].color};color:${MODES[m].ink || "#fff"}"><b>${MODES[m].name}</b><span>${MODES[m].sub}</span><em>+${steps(m, game.die)}</em><small>${lab(destOf(m))}</small></button>`).join("")}</div>`;
+    zone.querySelectorAll("[data-m]").forEach(b => b.onclick = () => { SFX.tap(); g.mode = b.dataset.m; if (g.mode !== "cash") g.choices = g.mode === "carre" ? shuffle([q.a, ...q.w]) : shuffle([q.a, shuffle(q.w)[0]]); save(); renderQuestion(); });
+    return;
+  }
+  if (!g.final) markDest([[destOf(g.mode), g.mode === "duo" ? "#3D7FD6" : g.mode === "carre" ? "#E7A52C" : "#D2493A"]]);
+  if (g.mode !== "cash") {
+    zone.innerHTML = `<div class="choices ${g.mode === "duo" ? "two" : ""}">${g.choices.map((ch, i) => `<button class="choice" data-i="${i}">${esc(ch)}</button>`).join("")}</div>${SR ? `<div class="row"><button class="mic" id="mic">${MIC} Répondre au micro</button></div><p class="tiny" id="mi" hidden></p>` : ""}`;
+    const choose = i => {
+      if (busy) return; busy = true; clearInterval(tmr); stopRec();
+      const ok = g.choices[i] === q.a;
+      zone.querySelectorAll(".choice").forEach(x => { x.disabled = true; if (g.choices[+x.dataset.i] === q.a) x.classList.add("right"); });
+      if (!ok) zone.querySelector(`.choice[data-i="${i}"]`).classList.add("wrong");
+      ok ? SFX.good() : SFX.bad(); buzz(ok ? 30 : [60, 40, 60]);
+      const m = $("#mic"); if (m) m.parentElement.remove();
+      zone.insertAdjacentHTML("beforeend", `${q.note ? `<p class="note">${esc(q.note)}</p>` : ""}<button class="big w" id="cont">${ok ? "Avancer !" : "Continuer"}</button>`);
+      busy = false; $("#cont").onclick = () => resolve(ok);
+    };
+    zone.querySelectorAll(".choice").forEach(b => b.onclick = () => choose(+b.dataset.i));
+    const mic = $("#mic");
+    if (mic) mic.onclick = () => { const info = $("#mi"); info.hidden = false; info.textContent = "J'écoute…"; mic.classList.add("rec");
+      listen((t, done) => { if (t) info.textContent = `J'entends : « ${t} »`; if (done) { mic.classList.remove("rec"); if (!t) return; const sc = g.choices.map(ch => score(t, ch)), bi = sc.indexOf(Math.max(...sc)); if (sc[bi] >= .5) choose(bi); else info.textContent = `« ${t} » ne correspond à aucune proposition. Réessaie ou touche ta réponse.`; } },
+        err => { info.textContent = micMsg(err); mic.classList.remove("rec"); }); };
+  } else {
+    zone.innerHTML = `<div class="row">${SR ? `<button class="mic" id="mic">${MIC} Répondre au micro</button>` : ""}<button class="ghostbtn" id="show">${SR ? "J'ai répondu à voix haute" : "Voir la réponse"}</button></div><div id="heard"></div>`;
+    const reveal = (t, sc) => {
+      clearInterval(tmr); stopRec();
+      const sugg = t ? (sc >= .72 ? "yes" : sc < .45 ? "no" : null) : null;
+      zone.innerHTML = `${t ? `<div class="heard"><span class="lab" style="color:var(--muted)">Réponse entendue</span><q>${esc(t)}</q><b style="color:${sugg === "yes" ? "var(--ok)" : sugg === "no" ? "var(--ko)" : "var(--muted)"}">${sugg === "yes" ? "Ça ressemble à la bonne réponse !" : sugg === "no" ? "Ça ne ressemble pas à la bonne réponse." : "Pas sûr : au groupe de juger."}</b></div>` : ""}
+        <div class="answer"><p class="lab" style="color:var(--ok)">Bonne réponse</p><b>${esc(q.a)}</b>${q.note ? `<p class="note" style="margin-top:6px">${esc(q.note)}</p>` : ""}</div>
+        <p class="tiny">Le groupe valide :</p><div class="judge"><button class="yes ${sugg === "yes" ? "sugg" : ""}" id="y">Juste</button><button class="no ${sugg === "no" ? "sugg" : ""}" id="n">Faux</button></div>`;
+      $("#y").onclick = () => { SFX.good(); buzz(30); resolve(true); }; $("#n").onclick = () => { SFX.bad(); buzz([60, 40, 60]); resolve(false); };
+    };
+    $("#show").onclick = () => { SFX.tap(); reveal("", 0); };
+    const mic = $("#mic");
+    if (mic) mic.onclick = () => { mic.classList.add("rec"); $("#heard").innerHTML = `<p class="tiny">J'écoute… parle maintenant.</p>`;
+      listen((t, done) => { if (t) $("#heard").innerHTML = `<p class="tiny">J'entends : « ${esc(t)} »</p>`; if (done) { mic.classList.remove("rec"); if (t) reveal(t, score(t, q.a)); } },
+        err => { $("#heard").innerHTML = `<p class="tiny">${micMsg(err)}</p>`; mic.classList.remove("rec"); }); };
+  }
+  if (game.timer) { const t0 = Date.now(), D = 30000; tmr = setInterval(() => { const f = Math.max(0, 1 - (Date.now() - t0) / D), bar = $("#bar"); if (bar) bar.style.transform = `scaleX(${f})`; if (f <= 0) { clearInterval(tmr); stopRec(); if (g.mode === "cash") { const s = $("#show"); if (s) s.click(); } else if (!zone.querySelector(".right")) { SFX.bad(); zone.querySelectorAll(".choice").forEach(x => { x.disabled = true; if (g.choices[+x.dataset.i] === q.a) x.classList.add("right"); }); zone.insertAdjacentHTML("beforeend", `<p class="note">Temps écoulé !</p><button class="big w" id="cont">Continuer</button>`); $("#cont").onclick = () => resolve(false); } } }, 200); }
+}
+async function resolve(ok) {
+  if (busy) return; busy = true;
+  try { speechSynthesis.cancel(); } catch (e) {}
+  const pi = game.cur, p = game.players[pi], g = game.q, n = game.cells.length;
+  closeSheet(); game.phase = "anim"; save(); await sleep(420);
+  const center = () => { const b = $("#board").getBoundingClientRect(), pt = geo.pts[p.pos]; return [b.left + pt.x / W * b.width, b.top + pt.y / H * b.height]; };
+  let again = false;
+  if (g.final) {
+    if (ok) { p.good++; game.winner = pi; save(); busy = false; step(); return; }
+    toast("Raté !", "La caravane recule de 3 cases.", "var(--ko)", 1700); await sleep(700);
+    const to = Math.max(0, p.pos - 3); await animateMove(pi, p.pos, to); p.streak = 0;
+  } else if (ok) {
+    p.good++; p.streak++;
+    const s = steps(g.mode, game.die);
+    toast(pick(["Bravo !", "Excellent !", "Mâ châ' Allâh !", "Bien joué !", "Parfait !"]), `${MODES[g.mode].name} réussi : +${s}`, "var(--ok)", 1300);
+    const [cx, cy] = center(); confetti(cx, cy, g.mode === "cash" ? 110 : 60);
+    await sleep(500);
+    await animateMove(pi, p.pos, Math.min(n - 1, p.pos + s));
+    if (p.streak > 0 && p.streak % 3 === 0 && p.pos < n - 1) { SFX.bonus(); toast(`Série de ${p.streak} !`, "+2 cases bonus", "#8A5A0C", 1400); await sleep(700); await animateMove(pi, p.pos, Math.min(n - 1, p.pos + 2)); }
+    const cell = game.cells[p.pos];
+    if (cell.t === "oasis") { SFX.bonus(); toast("Oasis !", "Tu rejoues", "#2E9E5B", 1500); again = true; await sleep(900); }
+    else if (cell.t === "vent") { SFX.whoosh(); toast("Vent favorable", "+2 cases", "#3D7FD6", 1400); await sleep(800); await animateMove(pi, p.pos, Math.min(n - 1, p.pos + 2)); }
+    else if (cell.t === "sable") { SFX.whoosh(); toast("Tempête de sable", "−3 cases", "#B5651D", 1500); await sleep(900); await animateMove(pi, p.pos, Math.max(0, p.pos - 3)); }
+    else if (cell.t === "puits") { SFX.bad(); toast("Le puits !", "Tu passes ton prochain tour", "#5B4A33", 1700); p.skip = true; await sleep(900); }
+    if (p.pos >= n - 1) { SFX.bonus(); toast("Aux portes de la ville !", "Question finale au prochain tour", "#8A5A0C", 1900); const [x, y] = center(); confetti(x, y, 80); await sleep(1100); }
+  } else {
+    p.streak = 0; toast(pick(["Raté…", "Dommage !", "Presque !"]), "La caravane reste sur place", "var(--ko)", 1400); await sleep(1100);
+  }
+  game.q = null; save(); await sleep(250); busy = false;
+  if (again) { game.phase = "roll"; save(); step(); } else next();
+}
+const pick = a => a[Math.floor(Math.random() * a.length)];
+function next() { game.cur = (game.cur + 1) % game.players.length; game.phase = "roll"; save(); step(); }
+function showWin() {
+  closeSheet(); $("#dock").innerHTML = ""; const w = $("#win"), p = game.players[game.winner];
+  const rank = game.players.map((x, i) => ({ ...x, i })).sort((a, b) => (b.i === game.winner) - (a.i === game.winner) || b.pos - a.pos || b.good - a.good);
+  w.innerHTML = `<div class="box"><svg viewBox="0 0 120 70" style="width:150px;margin:0 auto"><use href="#city" width="120" height="70"/></svg><p class="lab" style="color:var(--gold2)">Mâ châ' Allâh !</p><h2 style="color:${PCOL[game.winner]}">${esc(p.name)} arrive en premier</h2>
+    <div class="rank">${rank.map((x, k) => `<div>${av(x.i)}<span>${k + 1}. ${esc(x.name)}</span><span style="margin-left:auto;font-size:14px;color:var(--muted)">${x.good} bonnes rép.</span></div>`).join("")}</div>
+    <button class="big w" id="again">Rejouer</button><button class="ghostbtn" id="home">Changer les joueurs</button></div>`;
+  requestAnimationFrame(() => w.classList.add("show"));
+  SFX.win(); buzz([80, 60, 80, 60, 200]);
+  show(() => rocket(innerWidth * (.15 + Math.random() * .7)), 14, 380);
+  setTimeout(() => confetti(innerWidth / 2, innerHeight * .35, 160), 300);
+  $("#again").onclick = () => { game = newGame(game.cells.length, game.players); save(); renderGame(); };
+  $("#home").onclick = () => { game = null; save(); renderSetup(); };
+}
+if (game) { if (game.phase === "anim") game.phase = "roll"; renderGame(); } else renderSetup();
+})();
+</script>
+
+</body>
+</html>
