@@ -42,9 +42,10 @@ h1,h2,h3{font-family:var(--f-display);margin:0;line-height:1.1;text-wrap:balance
 .icon-btn{width:40px;height:40px;border-radius:12px;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);display:grid;place-items:center;flex:none}
 .icon-btn svg{width:20px;height:20px}
 /* plateau */
-.stage{perspective:1100px;padding-top:4px}
-.boardwrap{position:relative;border-radius:22px;padding:8px;background:linear-gradient(145deg,#7A5030,#3E2614);box-shadow:0 14px 0 #2A180A,0 30px 50px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.2);transform:rotateX(14deg);transform-origin:50% 60%;transition:transform .6s}
-@media (prefers-reduced-motion:reduce){.boardwrap{transform:none}}
+.stage{padding-top:4px}
+.boardwrap{position:relative;border-radius:22px;padding:8px;background:linear-gradient(145deg,#7A5030,#3E2614);box-shadow:0 14px 0 #2A180A,0 30px 50px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.2);transform:none}
+button{touch-action:manipulation}
+.dock{z-index:50}.sheet{z-index:60}.cardfx{z-index:70}.win{z-index:80}.toast{z-index:75}#fx{z-index:90}
 .shield{color:#7FD1FF;font-weight:800}
 #board{display:block;width:100%;height:auto;border-radius:16px}
 .sq-num{font:800 9px var(--f-body);fill:#fff;pointer-events:none}
@@ -680,14 +681,19 @@ function step() {
   } else if (game.phase === "question") { dock.innerHTML = ""; renderQuestion(); }
 }
 async function roll() {
-  if (busy) return; busy = true; $("#go").disabled = true; SFX.dice(); buzz([20, 40, 20]);
+  if (busy) return; busy = true;
+  try { await rollImpl(); } catch (e) { console.error(e); game.phase = "roll"; game.q = null; save(); } finally { busy = false; }
+  step();
+}
+async function rollImpl() {
+  const go = $("#go"); if (go) go.disabled = true; SFX.dice(); buzz([20, 40, 20]);
   const v = 1 + Math.floor(Math.random() * 6); spin += 2;
-  const cube = $("#cube"); cube.style.transform = `rotateX(${ROT[v][0] + 360 * spin}deg) rotateY(${ROT[v][1] + 360 * spin}deg) rotateZ(${spin % 2 ? 0 : 0}deg)`;
+  const cube = $("#cube"); if (cube) cube.style.transform = `rotateX(${ROT[v][0] + 360 * spin}deg) rotateY(${ROT[v][1] + 360 * spin}deg) rotateZ(${spin % 2 ? 0 : 0}deg)`;
   await sleep(1050); game.die = v;
   const p = game.players[game.cur], cell = game.cells[p.pos];
   const cat = cell.t === "cat" ? cell.cat : KEYS[Math.floor(Math.random() * 6)];
   toast(`${v}`, "", "#2A2118", 700); await sleep(500);
-  game.q = { id: draw(cat, p.level, false), cat, mode: null, final: false }; game.phase = "question"; save(); busy = false; step();
+  game.q = { id: draw(cat, p.level, false), cat, mode: null, final: false }; game.phase = "question"; save();
 }
 let tmr = null;
 function renderQuestion() {
@@ -745,6 +751,10 @@ function renderQuestion() {
 }
 async function resolve(ok) {
   if (busy) return; busy = true;
+  try { await resolveImpl(ok); } catch (e) { console.error(e); busy = false; game.q = null; game.phase = "roll"; save(); next(); }
+  busy = false;
+}
+async function resolveImpl(ok) {
   try { speechSynthesis.cancel(); } catch (e) {}
   const pi = game.cur, p = game.players[pi], g = game.q, n = game.cells.length;
   closeSheet(); game.phase = "anim"; save(); await sleep(420);
@@ -853,7 +863,15 @@ function showWin() {
   $("#again").onclick = () => { game = newGame(game.cells.length, game.players); save(); renderGame(); };
   $("#home").onclick = () => { game = null; save(); renderSetup(); };
 }
-if (game) { if (game.phase === "anim") game.phase = "roll"; renderGame(); } else renderSetup();
+function validGame(g) { try { return g && Array.isArray(g.cells) && g.cells.length >= 10 && Array.isArray(g.players) && g.players.length >= 2 && g.players.every(p => typeof p.pos === "number" && p.pos >= 0 && p.pos < g.cells.length) && g.cur >= 0 && g.cur < g.players.length && Array.isArray(g.used); } catch (e) { return false; } }
+function boot() {
+  try {
+    if (setup && Array.isArray(setup.players)) setup.players = setup.players.slice(0, 6); else setup = { players: [{ name: "Joueur 1", level: "normal" }, { name: "Joueur 2", level: "normal" }], size: 36, timer: false, read: true };
+    if (game && !validGame(game)) { game = null; save(); }
+    if (game) { if (game.phase !== "question" && game.phase !== "pick") { game.phase = "roll"; game.q = null; } if (game.phase === "question" && (!game.q || !Q[game.q.id])) { game.phase = "roll"; game.q = null; } save(); renderGame(); } else renderSetup();
+  } catch (e) { console.error(e); game = null; store.del("game3"); renderSetup(); }
+}
+boot();
 })();
 </script>
 
