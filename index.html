@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="La Caravane du Savoir : jeu de plateau et quiz sur l'islam à jouer en famille sur un seul téléphone. Duo, Carré ou Cash, réponse au micro.">
+<meta name="description" content="La Caravane du Savoir : jeu de plateau et quiz sur l'islam à jouer en famille sur un seul téléphone. Duo, Carré ou Cash, cartes chance, raccourcis, réponse au micro.">
 <meta name="theme-color" content="#1B1530">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Caravane">
@@ -42,7 +42,10 @@ h1,h2,h3{font-family:var(--f-display);margin:0;line-height:1.1;text-wrap:balance
 .icon-btn{width:40px;height:40px;border-radius:12px;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);display:grid;place-items:center;flex:none}
 .icon-btn svg{width:20px;height:20px}
 /* plateau */
-.boardwrap{position:relative;border-radius:22px;padding:8px;background:linear-gradient(145deg,#6B4526,#3E2614);box-shadow:0 20px 40px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.15)}
+.stage{perspective:1100px;padding-top:4px}
+.boardwrap{position:relative;border-radius:22px;padding:8px;background:linear-gradient(145deg,#7A5030,#3E2614);box-shadow:0 14px 0 #2A180A,0 30px 50px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.2);transform:rotateX(14deg);transform-origin:50% 60%;transition:transform .6s}
+@media (prefers-reduced-motion:reduce){.boardwrap{transform:none}}
+.shield{color:#7FD1FF;font-weight:800}
 #board{display:block;width:100%;height:auto;border-radius:16px}
 .sq-num{font:800 9px var(--f-body);fill:#fff;pointer-events:none}
 .pulse{animation:pulse 1.2s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
@@ -120,6 +123,20 @@ h1,h2,h3{font-family:var(--f-display);margin:0;line-height:1.1;text-wrap:balance
 .toast.show{opacity:1;transform:translate(-50%,0) scale(1)}
 .toast .t{display:inline-block;font-family:var(--f-display);font-size:clamp(30px,9vw,46px);font-weight:700;padding:10px 26px;border-radius:20px;color:#fff;box-shadow:0 12px 30px rgba(0,0,0,.4)}
 .toast .s{display:block;margin-top:8px;font-weight:800;font-size:17px;text-shadow:0 2px 6px rgba(0,0,0,.8)}
+.cardfx{position:fixed;inset:0;z-index:32;display:grid;place-items:center;background:rgba(10,7,20,.6);opacity:0;pointer-events:none;transition:opacity .3s;padding:20px;perspective:1200px}
+.cardfx.show{opacity:1;pointer-events:auto}
+.flip{width:min(78vw,300px);aspect-ratio:5/7;position:relative;transform-style:preserve-3d;transition:transform .8s cubic-bezier(.3,1.3,.5,1);transform:rotateY(0) scale(.7)}
+.cardfx.turned .flip{transform:rotateY(180deg) scale(1)}
+.cside{position:absolute;inset:0;border-radius:20px;backface-visibility:hidden;-webkit-backface-visibility:hidden;box-shadow:0 20px 50px rgba(0,0,0,.55);overflow:hidden}
+.cback{background:repeating-linear-gradient(45deg,#8A5A0C 0 10px,#A8711A 10px 20px);border:6px solid #F2B441;display:grid;place-items:center}
+.cback span{font-family:var(--f-display);font-size:64px;color:#FFE3A0;text-shadow:0 3px 0 #5B3A08}
+.cfront{transform:rotateY(180deg);background:var(--card);color:var(--ink);display:flex;flex-direction:column}
+.cfront .ch{padding:14px 16px;color:#fff;font-family:var(--f-display);font-size:15px;letter-spacing:.14em;text-transform:uppercase;text-align:center}
+.cfront .cb{flex:1;padding:16px 18px;display:grid;align-content:center;gap:10px;text-align:center}
+.cfront h3{font-size:clamp(24px,7vw,30px)}
+.cfront p{margin:0;font-size:17px;font-weight:600}
+.cfront .cf{padding:0 16px 16px;display:grid;gap:8px}
+.cfront .pk{border:0;border-radius:12px;padding:10px;font-weight:800;color:#fff}
 #fx{position:fixed;inset:0;width:100%;height:100%;z-index:40;pointer-events:none}
 /* accueil */
 .setup{padding-block:6px 30px;display:grid;gap:14px}
@@ -169,6 +186,11 @@ h1,h2,h3{font-family:var(--f-display);margin:0;line-height:1.1;text-wrap:balance
     <symbol id="i-vent" viewBox="0 0 20 20"><path d="M2 7h11a3 3 0 1 0-3-3M2 11h14a3 3 0 1 1-3 3M2 15h7" stroke="#3D7FD6" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
     <symbol id="i-sable" viewBox="0 0 20 20"><path d="M2 6c3-2 5 2 8 0s5 2 8 0M2 11c3-2 5 2 8 0s5 2 8 0M2 16c3-2 5 2 8 0s5 2 8 0" stroke="#B5651D" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
     <symbol id="i-puits" viewBox="0 0 20 20"><ellipse cx="10" cy="11" rx="7" ry="3.6" fill="#2A2118"/><ellipse cx="10" cy="11" rx="7" ry="3.6" fill="none" stroke="#8A7A62" stroke-width="2"/><path d="M4 5h12M5 5v5M15 5v5" stroke="#6B4526" stroke-width="1.8"/></symbol>
+    <symbol id="i-carte" viewBox="0 0 20 20"><rect x="4" y="2" width="12" height="16" rx="2.2" fill="#F2B441" stroke="#8A5A0C" stroke-width="1.5" transform="rotate(-8 10 10)"/><text x="10" y="14.5" text-anchor="middle" transform="rotate(-8 10 10)" style="font:900 11px sans-serif;fill:#6B3F08">?</text></symbol>
+    <symbol id="i-short" viewBox="0 0 20 20"><path d="M3 15c3-9 9-11 14-9" stroke="#2E9E5B" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="M13 3l4 3-4 3" stroke="#2E9E5B" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-trap" viewBox="0 0 20 20"><path d="M10 10m-1.5 0a1.5 1.5 0 1 1 3 0a3.5 3.5 0 1 1-7 0a5.5 5.5 0 1 1 11 0a7.5 7.5 0 1 1-15 0" stroke="#C0622B" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
+    <marker id="ah-g" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#2E9E5B"/></marker>
+    <marker id="ah-o" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#C0622B"/></marker>
     <radialGradient id="sand" cx="50%" cy="40%" r="75%"><stop offset="0" stop-color="#F3D9A4"/><stop offset=".7" stop-color="#E4BE7C"/><stop offset="1" stop-color="#C99A55"/></radialGradient>
     <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2C2350"/><stop offset="1" stop-color="#E9A963"/></linearGradient>
     <filter id="sh" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="2" stdDeviation="1.4" flood-color="#5B3A12" flood-opacity=".45"/></filter>
@@ -396,6 +418,9 @@ const SPEC = {
   vent: { name: "Vent", txt: "Vent favorable : +2 cases !", icon: "i-vent" },
   sable: { name: "Tempête", txt: "Tempête de sable : −3 cases…", icon: "i-sable" },
   puits: { name: "Puits", txt: "Le puits : tu passes ton prochain tour.", icon: "i-puits" },
+  carte: { name: "Carte", icon: "i-carte" },
+  short: { name: "Raccourci", icon: "i-short" },
+  trap: { name: "Sables mouvants", icon: "i-trap" },
 };
 const PCOL = ["#1FA37A", "#E0533F", "#3D7FD6", "#F2B441", "#9B6AE0", "#EE7FB0"];
 const MODES = { duo: { name: "Duo", sub: "2 réponses", color: "var(--duo)" }, carre: { name: "Carré", sub: "4 réponses", color: "var(--carre)", ink: "#2A1A05" }, cash: { name: "Cash", sub: "sans aide", color: "var(--cash)" } };
@@ -453,12 +478,21 @@ function tick() {
 const W = 360, H = 640;
 const PATH = "M58 588 C140 618 262 612 300 566 C338 520 306 480 238 478 C160 476 70 470 58 414 C46 358 104 340 176 340 C258 340 318 322 308 268 C298 214 226 208 156 208 C88 208 46 184 56 140 C66 96 138 92 198 96 C250 100 290 106 304 84";
 let geo = null;
+const LAYOUT = {
+  small: { short: [[.14, .32]], trap: [[.88, .7]], carte: [.1, .4, .6, .8], oasis: [.5], vent: [.25], sable: [.7], puits: [.45] },
+  mid: { short: [[.12, .27], [.5, .63]], trap: [[.44, .32], [.9, .75]], carte: [.08, .36, .56, .7, .84], oasis: [.2, .6], vent: [.66], sable: [.4, .8], puits: [.52] },
+  big: { short: [[.1, .22], [.45, .57], [.68, .78]], trap: [[.4, .3], [.62, .5], [.92, .79]], carte: [.06, .27, .48, .66, .83, .95], oasis: [.17, .55], vent: [.34, .74], sable: [.37, .86], puits: [.52, .89] },
+};
 function makeCells(n) {
-  const specAt = {};
-  const put = (fr, t) => fr.forEach(f => { let i = Math.round(f * (n - 1)); while (specAt[i] || i < 2 || i > n - 3) i++; specAt[i] = t; });
-  put([.14, .46, .78], "oasis"); put([.22, .54, .84], "vent"); put([.3, .62, .9], "sable"); put([.38, .7], "puits");
+  const L = n <= 26 ? LAYOUT.small : n <= 38 ? LAYOUT.mid : LAYOUT.big, specAt = {}, link = {};
+  const free = f => { let i = Math.max(2, Math.min(n - 3, Math.round(f * (n - 1)))), g = 0; while (specAt[i] && g++ < n) { i++; if (i > n - 3) i = 2; } return i; };
+  const tgt = f => { let j = Math.max(1, Math.min(n - 2, Math.round(f * (n - 1)))); return j; };
+  L.short.forEach(([a, b]) => { const i = free(a); specAt[i] = "short"; link[i] = Math.max(i + 2, tgt(b)); });
+  L.trap.forEach(([a, b]) => { const i = free(a); specAt[i] = "trap"; link[i] = Math.min(i - 2, tgt(b)); });
+  Object.values(link).forEach(j => { if (!specAt[j]) specAt[j] = "landing"; });
+  ["carte", "oasis", "vent", "sable", "puits"].forEach(t => L[t].forEach(f => { specAt[free(f)] = t; }));
   const seq = []; for (let r = 0; r < 12; r++) seq.push(...shuffle(KEYS)); let k = 0;
-  return Array.from({ length: n }, (_, i) => i === 0 ? { t: "start" } : i === n - 1 ? { t: "end" } : specAt[i] ? { t: specAt[i] } : { t: "cat", cat: seq[k++] });
+  return Array.from({ length: n }, (_, i) => i === 0 ? { t: "start" } : i === n - 1 ? { t: "end" } : specAt[i] && specAt[i] !== "landing" ? { t: specAt[i], to: link[i] } : { t: "cat", cat: seq[k++] });
 }
 function computeGeo(n) {
   const p = document.createElementNS("http://www.w3.org/2000/svg", "path"); p.setAttribute("d", PATH);
@@ -474,12 +508,21 @@ function boardSVG() {
   ];
   const dunes = `<path d="M0 520 Q60 490 120 515 T240 505 T360 500 V640 H0Z" fill="#E0B870" opacity=".55"/><path d="M0 300 Q80 270 150 295 T300 285 T360 290 V360 Q300 350 240 360 T120 355 T0 360Z" fill="#EDC98A" opacity=".5"/><path d="M0 170 Q70 150 140 168 T280 160 T360 165 V200 Q280 190 200 200 T0 200Z" fill="#EDC98A" opacity=".45"/>`;
   const stars = Array.from({ length: 22 }, (_, i) => `<circle cx="${(i * 71) % 360}" cy="${4 + (i * 37) % 40}" r="${i % 3 ? .8 : 1.3}" fill="#fff" opacity="${.4 + (i % 4) * .15}"/>`).join("");
-  let sq = "";
+  let sq = "", links = "";
+  const disc = (x, y, rr, top, side) => `<ellipse cx="${x}" cy="${y + 4.5}" rx="${rr}" ry="${rr * .92}" fill="${side}"/><ellipse cx="${x}" cy="${y + 4.5}" rx="${rr}" ry="${rr * .92}" fill="rgba(40,20,0,.38)"/><rect x="${x - rr}" y="${y}" width="${rr * 2}" height="4.5" fill="${side}"/><rect x="${x - rr}" y="${y}" width="${rr * 2}" height="4.5" fill="rgba(40,20,0,.38)"/><circle cx="${x}" cy="${y}" r="${rr}" fill="${top}"/>`;
   pts.forEach((p, i) => {
     const c = game.cells[i];
+    if ((c.t === "short" || c.t === "trap") && c.to != null) {
+      const a = p, b = pts[c.to], mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1;
+      let nx = -dy / len, ny = dx / len; if ((mx + nx * 10 - W / 2) ** 2 > (mx - W / 2) ** 2) { nx = -nx; ny = -ny; }
+      const bend = Math.min(60, len * .35), cx = mx + nx * bend, cy = my + ny * bend, d = `M${a.x} ${a.y} Q${cx} ${cy} ${b.x} ${b.y}`; const lx = (a.x + 2 * cx + b.x) / 4, ly = (a.y + 2 * cy + b.y) / 4;
+      links += c.t === "short"
+        ? `<path d="${d}" fill="none" stroke="#6B4526" stroke-width="7" stroke-linecap="round" opacity=".85"/><path d="${d}" fill="none" stroke="#E9D7B4" stroke-width="4.5" stroke-dasharray="2.5 3" /><path d="${d}" fill="none" stroke="#2E9E5B" stroke-width="2" stroke-dasharray="0.1 999" marker-end="url(#ah-g)"/><text x="${lx}" y="${ly - 6}" text-anchor="middle" style="font:800 8.5px var(--f-body);fill:#1E5E38;paint-order:stroke;stroke:#FFF3D6;stroke-width:3px">Raccourci</text>`
+        : `<path d="${d}" fill="none" stroke="#C0622B" stroke-width="4" stroke-dasharray="7 5" stroke-linecap="round" opacity=".8" marker-end="url(#ah-o)"/><text x="${lx}" y="${ly - 6}" text-anchor="middle" style="font:800 8.5px var(--f-body);fill:#8A3A12;paint-order:stroke;stroke:#FFF3D6;stroke-width:3px">Sables mouvants</text>`;
+    }
     if (c.t === "start" || c.t === "end") return;
-    if (c.t === "cat") sq += `<g filter="url(#sh)"><circle cx="${p.x}" cy="${p.y}" r="${r}" fill="${CATS[c.cat].color}" stroke="#FFF6E0" stroke-width="2.4"/><circle cx="${p.x}" cy="${p.y}" r="${r * .62}" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="1.2"/><text class="sq-num" x="${p.x}" y="${p.y + 3}" text-anchor="middle">${i}</text></g>`;
-    else sq += `<g filter="url(#sh)"><circle cx="${p.x}" cy="${p.y}" r="${r + 1.5}" fill="#FFF3D6" stroke="#8A5A2B" stroke-width="2" stroke-dasharray="3 2"/><use href="#${SPEC[c.t].icon}" x="${p.x - r * .75}" y="${p.y - r * .75}" width="${r * 1.5}" height="${r * 1.5}"/></g>`;
+    if (c.t === "cat") sq += `<g>${disc(p.x, p.y, r, CATS[c.cat].color, CATS[c.cat].color)}<circle cx="${p.x}" cy="${p.y}" r="${r}" fill="none" stroke="#FFF6E0" stroke-width="2.2"/><ellipse cx="${p.x - r * .3}" cy="${p.y - r * .35}" rx="${r * .45}" ry="${r * .22}" fill="rgba(255,255,255,.3)"/><text class="sq-num" x="${p.x}" y="${p.y + 3}" text-anchor="middle">${i}</text></g>`;
+    else { const top = c.t === "carte" ? "#FFE3A0" : c.t === "short" ? "#DFF3E4" : c.t === "trap" ? "#F8DCC6" : "#FFF3D6"; sq += `<g>${disc(p.x, p.y, r + 1.5, top, "#C9A36A")}<circle cx="${p.x}" cy="${p.y}" r="${r + 1.5}" fill="none" stroke="#8A5A2B" stroke-width="1.8"/><use href="#${SPEC[c.t].icon}" x="${p.x - r * .78}" y="${p.y - r * .78}" width="${r * 1.56}" height="${r * 1.56}"/></g>`; }
   });
   const s0 = pts[0], sE = pts[n - 1];
   return `<svg id="board" viewBox="0 0 ${W} ${H}" role="img" aria-label="Plateau de jeu">
@@ -494,7 +537,7 @@ function boardSVG() {
     <g filter="url(#sh)"><circle cx="${s0.x}" cy="${s0.y}" r="${r + 6}" fill="#1B1530" stroke="#F2B441" stroke-width="3"/><text x="${s0.x}" y="${s0.y + 4}" text-anchor="middle" style="font:800 10px var(--f-body);fill:#F2B441">DÉPART</text></g>
     <use href="#city" x="${sE.x - 70}" y="${sE.y - 82}" width="120" height="70"/>
     <g filter="url(#sh)"><circle cx="${sE.x}" cy="${sE.y}" r="${r + 7}" fill="#F2B441" stroke="#FFF3C4" stroke-width="3"/><text x="${sE.x}" y="${sE.y + 4}" text-anchor="middle" style="font:800 9.5px var(--f-body);fill:#2A1A05">ARRIVÉE</text></g>
-    ${sq}
+    ${links}${sq}
     <g id="marks"></g><g id="pawns"></g>
   </svg>`;
 }
@@ -575,7 +618,11 @@ function renderSetup() {
       <div class="seg"><button data-s="24" aria-pressed="${setup.size === 24}">Court · 24</button><button data-s="36" aria-pressed="${setup.size === 36}">Moyen · 36</button><button data-s="48" aria-pressed="${setup.size === 48}">Long · 48</button></div>
       <p class="lab2">Options</p>
       <div class="seg"><button data-o="read" aria-pressed="${setup.read}">Lecture des questions</button><button data-o="timer" aria-pressed="${setup.timer}">Chrono 30 s</button></div>
-      <p class="hint">Réponse au micro : ${SR ? "disponible sur ce navigateur." : "indisponible ici ; elle marche sur le site en ligne (Safari ou Chrome)."} Série de 3 bonnes réponses : +2 cases bonus.</p>
+      <p class="hint">Réponse au micro : ${SR ? "disponible sur ce navigateur." : "indisponible ici ; elle marche sur le site en ligne (Safari ou Chrome)."} Série de 3 bonnes réponses : +2 cases. Le dernier, s'il est loin derrière, reçoit un vent arrière (+2).</p>
+    </section>
+    <section class="panel">
+      <p class="lab2">Sur le chemin</p>
+      <p class="hint" style="opacity:.9">Cartes chance et malchance · raccourcis par les ponts de corde · sables mouvants qui font reculer · oasis (rejoue) · vent (+2) · tempête (−3) · puits (passe un tour). Rien n'est joué avant la question finale : si tu la rates, tu recules de 5 cases.</p>
     </section>
     <button class="big w" id="start">Partir à l'aventure</button>
     <p class="hint" style="text-align:center">${Q.length} questions · Coran, vie du Prophète ﷺ, prophètes, piliers, histoire, compagnons</p>
@@ -588,7 +635,7 @@ function renderSetup() {
   root.querySelectorAll("[data-o]").forEach(b => b.onclick = () => { read(); setup[b.dataset.o] = !setup[b.dataset.o]; save(); renderSetup(); });
   $("#start").onclick = () => { read(); SFX.bonus(); game = newGame(setup.size, setup.players); save(); renderGame(); window.scrollTo(0, 0); };
 }
-const newGame = (size, pl) => ({ cells: makeCells(size), players: pl.map(p => ({ name: p.name, level: p.level, pos: 0, skip: false, good: 0, streak: 0 })), cur: 0, phase: "roll", used: [], die: 1, q: null, winner: null, timer: setup.timer, read: setup.read });
+const newGame = (size, pl) => ({ cells: makeCells(size), players: pl.map(p => ({ name: p.name, level: p.level, pos: 0, skip: false, good: 0, streak: 0, shield: false })), deck: [], cur: 0, phase: "roll", used: [], die: 1, q: null, winner: null, timer: setup.timer, read: setup.read });
 
 /* ============ partie ============ */
 const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
@@ -599,7 +646,7 @@ function renderGame() {
   root.innerHTML = `<div class="top"><div class="chips" id="chips"></div>
       <button class="icon-btn" id="snd" aria-label="${muted ? "Activer" : "Couper"} le son">${muted ? `<svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6" stroke="currentColor" stroke-width="2"/></svg>` : `<svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8a5 5 0 0 1 0 8M18.5 5a9 9 0 0 1 0 14" stroke="currentColor" stroke-width="2" fill="none"/></svg>`}</button>
       <button class="icon-btn" id="quit" aria-label="Quitter la partie"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2.4"/></svg></button></div>
-    <div class="boardwrap">${boardSVG()}</div>
+    <div class="stage"><div class="boardwrap">${boardSVG()}</div></div><div class="cardfx" id="cardfx"></div>
     <div class="dock"><div class="dock-in" id="dock"></div></div>
     <div class="sheet" id="sheet"><div class="card" id="card"></div></div>
     <div class="toast" id="toast"></div>
@@ -608,7 +655,7 @@ function renderGame() {
   $("#quit").onclick = () => { if ($("#quit").dataset.sure) { stopRec(); try { speechSynthesis.cancel(); } catch (e) {} game = null; save(); renderSetup(); } else { $("#quit").dataset.sure = "1"; $("#quit").style.background = "var(--ko)"; toast("Touche encore la croix pour quitter", "", "#6B4526", 1600); setTimeout(() => { const q = $("#quit"); if (q) { delete q.dataset.sure; q.style.background = ""; } }, 2500); } };
   drawPawns(); chips(); step();
 }
-function chips() { const c = $("#chips"); if (!c) return; c.innerHTML = game.players.map((p, i) => `<div class="chip ${i === game.cur ? "cur" : ""}">${av(i)}<span>${esc(p.name)} <small>· ${p.pos}</small>${p.streak >= 2 ? ` <span class="fire">×${p.streak}</span>` : ""}${p.skip ? ` <small>(puits)</small>` : ""}</span></div>`).join(""); const cur = c.querySelector(".cur"); if (cur) cur.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" }); }
+function chips() { const c = $("#chips"); if (!c) return; c.innerHTML = game.players.map((p, i) => `<div class="chip ${i === game.cur ? "cur" : ""}">${av(i)}<span>${esc(p.name)} <small>· ${p.pos}</small>${p.streak >= 2 ? ` <span class="fire">×${p.streak}</span>` : ""}${p.skip ? ` <small>(passe)</small>` : ""}${p.shield ? ` <span class="shield">bouclier</span>` : ""}</span></div>`).join(""); const cur = c.querySelector(".cur"); if (cur) cur.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" }); }
 function toast(t, s, bg, ms = 1500) { const el = $("#toast"); if (!el) return; el.innerHTML = `<span class="t" style="background:${bg}">${t}</span>${s ? `<span class="s">${s}</span>` : ""}`; el.classList.add("show"); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove("show"), ms); }
 function openSheet(html) { const c = $("#card"); c.innerHTML = html; c.scrollTop = 0; requestAnimationFrame(() => $("#sheet").classList.add("open")); }
 function closeSheet() { const s = $("#sheet"); if (s) s.classList.remove("open"); markDest([]); }
@@ -648,7 +695,7 @@ function renderQuestion() {
   const p = game.players[game.cur], g = game.q, q = Q[g.id], c = CATS[g.cat], n = game.cells.length;
   const destOf = m => Math.min(n - 1, p.pos + steps(m, game.die));
   const lab = i => { const t = game.cells[i].t; return t === "end" ? "Arrivée !" : t === "cat" ? "case " + i : SPEC[t].name; };
-  const head = `<div class="band" style="background:${c.color};color:${c.ink || "#fff"}"><span>${c.name}</span><span class="sp"></span><span class="pill">${g.final ? "Finale" : "Dé " + game.die}</span></div>
+  const head = `<div class="band" style="background:${c.color};color:${c.ink || "#fff"}"><span>${c.name}</span><span class="sp"></span><span class="pill">${g.final ? "Finale" : g.bonus ? "Défi : +4" : "Dé " + game.die}</span></div>
     <div class="cbody"><p class="qfor"><span style="color:${PCOL[game.cur]}">${esc(p.name)}</span> · ${["", "facile", "moyenne", "difficile"][q.d]}${canSpeak && !muted ? `<button class="say" id="say">Relire</button>` : ""}</p><div class="qtext">${esc(q.q)}</div>${game.timer && g.mode ? `<div class="timer"><i id="bar"></i></div>` : ""}<div id="zone"></div></div>`;
   openSheet(head);
   if ($("#say")) $("#say").onclick = () => speak(q.q);
@@ -660,7 +707,7 @@ function renderQuestion() {
     zone.querySelectorAll("[data-m]").forEach(b => b.onclick = () => { SFX.tap(); g.mode = b.dataset.m; if (g.mode !== "cash") g.choices = g.mode === "carre" ? shuffle([q.a, ...q.w]) : shuffle([q.a, shuffle(q.w)[0]]); save(); renderQuestion(); });
     return;
   }
-  if (!g.final) markDest([[destOf(g.mode), g.mode === "duo" ? "#3D7FD6" : g.mode === "carre" ? "#E7A52C" : "#D2493A"]]);
+  if (!g.final && !g.bonus) markDest([[destOf(g.mode), g.mode === "duo" ? "#3D7FD6" : g.mode === "carre" ? "#E7A52C" : "#D2493A"]]);
   if (g.mode !== "cash") {
     zone.innerHTML = `<div class="choices ${g.mode === "duo" ? "two" : ""}">${g.choices.map((ch, i) => `<button class="choice" data-i="${i}">${esc(ch)}</button>`).join("")}</div>${SR ? `<div class="row"><button class="mic" id="mic">${MIC} Répondre au micro</button></div><p class="tiny" id="mi" hidden></p>` : ""}`;
     const choose = i => {
@@ -705,21 +752,22 @@ async function resolve(ok) {
   let again = false;
   if (g.final) {
     if (ok) { p.good++; game.winner = pi; save(); busy = false; step(); return; }
-    toast("Raté !", "La caravane recule de 3 cases.", "var(--ko)", 1700); await sleep(700);
-    const to = Math.max(0, p.pos - 3); await animateMove(pi, p.pos, to); p.streak = 0;
+    toast("Raté !", "La caravane recule de 5 cases.", "var(--ko)", 1700); await sleep(700);
+    const to = Math.max(0, p.pos - 5); await animateMove(pi, p.pos, to); p.streak = 0;
+  } else if (g.bonus) {
+    if (ok) { p.good++; toast("Défi réussi !", "+4 cases", "var(--ok)", 1300); const [cx, cy] = center(); confetti(cx, cy, 90); await sleep(500); await moveBy(pi, 4); const r = await land(pi); if (r === "q") { busy = false; return; } again = r === true; }
+    else { toast("Défi raté", "Pas de bonus cette fois", "var(--ko)", 1400); await sleep(1100); }
   } else if (ok) {
     p.good++; p.streak++;
-    const s = steps(g.mode, game.die);
-    toast(pick(["Bravo !", "Excellent !", "Mâ châ' Allâh !", "Bien joué !", "Parfait !"]), `${MODES[g.mode].name} réussi : +${s}`, "var(--ok)", 1300);
+    let s = steps(g.mode, game.die), tail = false;
+    const lead = Math.max(...game.players.map(x => x.pos)), last = Math.min(...game.players.map(x => x.pos));
+    if (game.players.length > 1 && p.pos === last && lead - p.pos >= 6) { s += 2; tail = true; }
+    toast(pick(["Bravo !", "Excellent !", "Mâ châ' Allâh !", "Bien joué !", "Parfait !"]), `${MODES[g.mode].name} réussi : +${s}${tail ? " (vent arrière +2)" : ""}`, "var(--ok)", 1500);
     const [cx, cy] = center(); confetti(cx, cy, g.mode === "cash" ? 110 : 60);
     await sleep(500);
     await animateMove(pi, p.pos, Math.min(n - 1, p.pos + s));
     if (p.streak > 0 && p.streak % 3 === 0 && p.pos < n - 1) { SFX.bonus(); toast(`Série de ${p.streak} !`, "+2 cases bonus", "#8A5A0C", 1400); await sleep(700); await animateMove(pi, p.pos, Math.min(n - 1, p.pos + 2)); }
-    const cell = game.cells[p.pos];
-    if (cell.t === "oasis") { SFX.bonus(); toast("Oasis !", "Tu rejoues", "#2E9E5B", 1500); again = true; await sleep(900); }
-    else if (cell.t === "vent") { SFX.whoosh(); toast("Vent favorable", "+2 cases", "#3D7FD6", 1400); await sleep(800); await animateMove(pi, p.pos, Math.min(n - 1, p.pos + 2)); }
-    else if (cell.t === "sable") { SFX.whoosh(); toast("Tempête de sable", "−3 cases", "#B5651D", 1500); await sleep(900); await animateMove(pi, p.pos, Math.max(0, p.pos - 3)); }
-    else if (cell.t === "puits") { SFX.bad(); toast("Le puits !", "Tu passes ton prochain tour", "#5B4A33", 1700); p.skip = true; await sleep(900); }
+    const r = await land(pi); if (r === "q") { busy = false; return; } again = r === true;
     if (p.pos >= n - 1) { SFX.bonus(); toast("Aux portes de la ville !", "Question finale au prochain tour", "#8A5A0C", 1900); const [x, y] = center(); confetti(x, y, 80); await sleep(1100); }
   } else {
     p.streak = 0; toast(pick(["Raté…", "Dommage !", "Presque !"]), "La caravane reste sur place", "var(--ko)", 1400); await sleep(1100);
@@ -728,6 +776,69 @@ async function resolve(ok) {
   if (again) { game.phase = "roll"; save(); step(); } else next();
 }
 const pick = a => a[Math.floor(Math.random() * a.length)];
+/* ---------- cases spéciales, raccourcis, cartes ---------- */
+async function moveBy(pi, k) { const p = game.players[pi], n = game.cells.length, to = Math.max(0, Math.min(n - 1, p.pos + k)); if (to !== p.pos) await animateMove(pi, p.pos, to); }
+async function jumpMove(pi, to) {
+  const p = game.players[pi], a = geo.pts[p.pos], b = geo.pts[to], t0 = performance.now(), D = 900, up = to > p.pos;
+  up ? SFX.bonus() : SFX.whoosh(); buzz(up ? [20, 30, 20] : 80);
+  await new Promise(res => { const f = now => { const t = Math.min(1, (now - t0) / D), e = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; const x = a.x + (b.x - a.x) * e, y = a.y + (b.y - a.y) * e - Math.sin(Math.PI * t) * (up ? 70 : 25); const el = $("#pw" + pi); if (el) el.setAttribute("transform", `translate(${x} ${y}) rotate(${up ? 0 : Math.sin(t * 20) * 12})`); t < 1 ? requestAnimationFrame(f) : res(); }; requestAnimationFrame(f); });
+  p.pos = to; drawPawns(); chips();
+}
+function protect(p) { if (!p.shield) return false; p.shield = false; SFX.bonus(); toast("Talisman !", "Le malheur est évité", "#3D7FD6", 1500); return true; }
+async function land(pi) {
+  const p = game.players[pi], cell = game.cells[p.pos], n = game.cells.length;
+  if (p.pos >= n - 1) return false;
+  if (cell.t === "oasis") { SFX.bonus(); toast("Oasis !", "Tu rejoues", "#2E9E5B", 1500); await sleep(900); return true; }
+  if (cell.t === "vent") { SFX.whoosh(); toast("Vent favorable", "+2 cases", "#3D7FD6", 1400); await sleep(800); await moveBy(pi, 2); return false; }
+  if (cell.t === "sable") { if (protect(p)) { await sleep(1000); return false; } SFX.whoosh(); toast("Tempête de sable", "−3 cases", "#B5651D", 1500); await sleep(900); await moveBy(pi, -3); return false; }
+  if (cell.t === "puits") { if (protect(p)) { await sleep(1000); return false; } SFX.bad(); toast("Le puits !", "Tu passes ton prochain tour", "#5B4A33", 1700); p.skip = true; await sleep(900); return false; }
+  if (cell.t === "short") { toast("Raccourci !", `Ta caravane file jusqu'à la case ${cell.to}`, "#2E9E5B", 1500); await sleep(700); await jumpMove(pi, cell.to); const [x, y] = ptScreen(p.pos); confetti(x, y, 50); return false; }
+  if (cell.t === "trap") { if (protect(p)) { await sleep(1000); return false; } toast("Sables mouvants !", `Tu glisses jusqu'à la case ${cell.to}`, "#C0622B", 1600); await sleep(800); await jumpMove(pi, cell.to); return false; }
+  if (cell.t === "carte") return await drawCard(pi);
+  return false;
+}
+function ptScreen(i) { const b = $("#board").getBoundingClientRect(), pt = geo.pts[i]; return [b.left + pt.x / W * b.width, b.top + pt.y / H * b.height]; }
+const leaderIdx = () => { let m = -1, k = 0; game.players.forEach((x, i) => { if (x.pos > m) { m = x.pos; k = i; } }); return k; };
+const lastIdx = () => { let m = 1e9, k = 0; game.players.forEach((x, i) => { if (x.pos < m) { m = x.pos; k = i; } }); return k; };
+const CARDS = {
+  av3: { k: "good", t: "Vent du désert", d: "Un vent puissant pousse ta caravane : avance de 3 cases.", run: pi => moveBy(pi, 3) },
+  av2: { k: "good", t: "Guide bédouin", d: "Il connaît un sentier secret : avance de 2 cases.", run: pi => moveBy(pi, 2) },
+  tresor: { k: "good", t: "Carte au trésor", d: "Rends-toi directement à la prochaine oasis !", run: async pi => { const p = game.players[pi], i = game.cells.findIndex((c, j) => j > p.pos && c.t === "oasis"); if (i > 0) { await jumpMove(pi, i); return true; } await moveBy(pi, 3); } },
+  rejoue: { k: "good", t: "Chameau infatigable", d: "Ton chameau a de l'énergie à revendre : tu rejoues tout de suite !", run: () => true },
+  bouclier: { k: "good", t: "Talisman du voyageur", d: "Tu es protégé du prochain malheur : tempête, puits, sables mouvants ou carte de malchance.", run: pi => { game.players[pi].shield = true; } },
+  echange: { k: "good", t: "Caravanes échangées", d: "Échange ta place avec le joueur en tête !", run: async pi => { const L = leaderIdx(), a = game.players[pi], b = game.players[L]; if (L === pi || b.pos === a.pos) { toast("Tu es déjà en tête !", "Avance d'une case", "#2E9E5B", 1300); await moveBy(pi, 1); return; } const pa = a.pos, pb = b.pos; await jumpMove(pi, pb); await jumpMove(L, pa); } },
+  sabotage: { k: "good", t: "Tempête ciblée", d: "Choisis un joueur : il recule de 3 cases.", pick: true, run: async (pi, target) => { if (target != null) { if (protect(game.players[target])) { await sleep(900); return; } await moveBy(target, -3); } } },
+  defi: { k: "good", t: "Défi du savant", d: "Réponds à une question en Cash : si c'est juste, avance de 4 cases !", run: () => "defi" },
+  re2: { k: "bad", t: "Tempête de sable", d: "Le sable t'aveugle : recule de 2 cases.", run: pi => moveBy(pi, -2) },
+  re3: { k: "bad", t: "Mirage", d: "Tu as suivi un mirage : recule de 3 cases.", run: pi => moveBy(pi, -3) },
+  re1: { k: "bad", t: "Sandale cassée", d: "Il faut la réparer : recule d'une case.", run: pi => moveBy(pi, -1) },
+  tetu: { k: "bad", t: "Chameau têtu", d: "Ton chameau refuse d'avancer : tu passes ton prochain tour.", run: pi => { game.players[pi].skip = true; } },
+  chef: { k: "all", t: "Vent contraire", d: "Le joueur en tête recule de 4 cases. Même si c'est toi !", run: async () => { const L = leaderIdx(); if (protect(game.players[L])) { await sleep(900); return; } await moveBy(L, -4); } },
+  solid: { k: "all", t: "Solidarité", d: "Le joueur le plus en retard avance de 4 cases.", run: async () => { await moveBy(lastIdx(), 4); } },
+  tempete: { k: "all", t: "Tempête générale", d: "Tous les autres joueurs reculent de 2 cases.", run: async pi => { for (let i = 0; i < game.players.length; i++) if (i !== pi) { if (protect(game.players[i])) { await sleep(700); continue; } await moveBy(i, -2); } } },
+  chamboule: { k: "all", t: "Grand chamboulement", d: "Le premier et le dernier échangent leur place !", run: async () => { const L = leaderIdx(), D = lastIdx(); if (L === D || game.players[L].pos === game.players[D].pos) return; const pl = game.players[L].pos, pd = game.players[D].pos; await jumpMove(L, pd); await jumpMove(D, pl); } },
+};
+const DECK = ["av3", "av3", "av2", "tresor", "rejoue", "bouclier", "echange", "sabotage", "defi", "defi", "re2", "re2", "re3", "re1", "tetu", "chef", "chef", "solid", "tempete", "chamboule"];
+async function drawCard(pi) {
+  if (!game.deck || !game.deck.length) game.deck = shuffle(DECK);
+  const id = game.deck.pop(), c = CARDS[id], p = game.players[pi]; save();
+  const head = c.k === "good" ? ["Chance", "#2E9E5B"] : c.k === "bad" ? ["Malchance", "#D2493A"] : ["Coup du destin", "#8A5CD0"];
+  const box = $("#cardfx"); SFX.whoosh();
+  const others = game.players.map((x, i) => [x, i]).filter(([, i]) => i !== pi);
+  box.innerHTML = `<div class="flip"><div class="cside cback"><span>?</span></div><div class="cside cfront"><div class="ch" style="background:${head[1]}">${head[0]}</div><div class="cb"><h3>${c.t}</h3><p>${c.d}</p></div><div class="cf">${c.pick ? others.map(([x, i]) => `<button class="pk" data-t="${i}" style="background:${PCOL[i]}">${esc(x.name)} recule</button>`).join("") : `<button class="big w" id="cok">OK</button>`}</div></div></div>`;
+  box.classList.add("show"); await sleep(350); box.classList.add("turned");
+  await sleep(500); c.k === "good" ? SFX.good() : c.k === "bad" ? SFX.bad() : SFX.bonus();
+  const target = await new Promise(res => { if (c.pick) box.querySelectorAll("[data-t]").forEach(b => b.onclick = () => res(+b.dataset.t)); else $("#cok").onclick = () => res(null); });
+  box.classList.remove("turned"); box.classList.remove("show"); await sleep(350);
+  if (c.k === "bad" && protect(p)) { await sleep(1000); return false; }
+  const r = await c.run(pi, target); save(); chips();
+  if (r === "defi") {
+    const cat = KEYS[Math.floor(Math.random() * 6)];
+    game.q = { id: draw(cat, p.level, false), cat, mode: "cash", final: false, bonus: true }; game.phase = "question"; save(); step(); return "q";
+  }
+  if (r === true) { toast("Tu rejoues !", "", "#2E9E5B", 1200); await sleep(700); }
+  return r === true;
+}
 function next() { game.cur = (game.cur + 1) % game.players.length; game.phase = "roll"; save(); step(); }
 function showWin() {
   closeSheet(); $("#dock").innerHTML = ""; const w = $("#win"), p = game.players[game.winner];
